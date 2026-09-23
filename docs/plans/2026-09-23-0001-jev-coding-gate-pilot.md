@@ -56,9 +56,9 @@ Nothing is wired into a real workflow until question 1 is "go".
      - Both see the same 2–3 s tail, which is on the API side.
    - Code: `jev_gate.py` + shared `concerns.py` vs `code_gate.baml`. The BAML side needs the
      nightly toolchain, and the skill-check bypass until `baml agent install` is run.
-   - **Decision:** adopt **Python** (`typesafe-sdk`) for the estate. Every target repo is
-     Python, the SDK is stable and it's testable with a fake transport. Keep the BAML
-     version as the `feelings` showcase.
+   - **Decision (owner, 2026-09-23):** use Jev **both with and without BAML**. Keep both
+     runners as first-class, and compare every run against the Claude CLI runs on equal
+     terms, per row 11.
 
 - **Shipped (branch `feat/jev-coding-gate-pilot`, not yet merged):**
   - Rows 5–7: key provided 2026-09-23. Spend is estimated at ≈ $0.04 at list price (600
@@ -255,6 +255,7 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
+| 11 | Fair comparison across runners (Jev without BAML, Jev with BAML, Claude CLI; optionally Claude through BAML, which needs `ANTHROPIC_API_KEY`) | agent (Claude through BAML: owner provides the key) | `metrics.py` takes several run files and scores them on the **same answered fixtures**, reporting first-sample and k-sample metrics side by side; one timing method for all runners (10 single CLI calls, start-up included); Jev token usage logged |
 | 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); log `usage.input_tokens` per request for real cost | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; cost measured, not estimated; reject threshold tuned (catch is 0.68 at the untuned 0.70 despite AUC 0.93–0.98); blocked-run test covers k>1 |
 | 8 | Claude repeat run (k=5) for agreement/spread; light k=1 run shipped, results in Status | owner OKs session usage (≈ 900 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows added to the Status table |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |

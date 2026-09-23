@@ -32,6 +32,18 @@ Nothing is wired into a real workflow until question 1 is "go".
 - **Paused 2026-09-23 — no Jev access.** TypeSafe sign-up returned "Whoops, we're full - check
   https://x.com/typesafeai for more information!". Rows 5–7 wait for access. Everything else is
   built, tested offline, and dormant, so the arc resumes at row 5 with no rework.
+- **Meanwhile: Claude baseline (row 8).** `eval/claude_gate.py` asks the same four questions
+  (shared via `eval/concerns.py`) through the logged-in Claude Code session: `claude -p`,
+  no API key. This gives a baseline now; later it becomes the bar Jev has to beat on
+  speed and cost.
+  - **Measured (Haiku, thinking off, 2026-09-23):**
+    - 18–62 s per call. Parallel works: 8 calls with 8 workers took 62 s wall.
+    - About $0.04–0.19 per call at list price (`total_cost_usd`), counted against the
+      session's usage limits.
+    - With thinking on it was ~90 s and ~5k thinking tokens per call, so thinking is
+      turned off.
+  - **Caveat:** Claude states a number when asked; Jev returns a classifier probability.
+    Compare on AUC (ranking), not on the 0.70 cut-off.
 - **Watch-outs:**
   - `baml` refuses to run while the repo's BAML skill files (`.claude/skills/baml-core/`,
     `.agents/skills/baml-core/`, written for `0.20.1`) don't match the toolchain. Until
@@ -156,4 +168,5 @@ Each becomes a row in the next arc if the result is "go".
 |---|---|---|---|
 | 5 | Key + spend approval | owner (blocked: TypeSafe sign-ups full, 2026-09-23) | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
 | 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
+| 8 | Claude (Haiku) baseline run | owner OKs session usage (≈ 300 calls) → agent | `uv run eval/claude_gate.py 5 haiku 8 < eval/fixtures.jsonl > eval/run-claude.jsonl` has 300 records; `metrics.py` output pasted here |
 | 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

@@ -5,4 +5,4 @@ extend-select = ["I", "B", "UP", "S"]
 ignore = ["S101"]  # pytest asserts
 
 [lint.isort]
-known-first-party = ["jev_gate", "metrics"]
+known-first-party = ["claude_gate", "concerns", "jev_gate", "metrics"]

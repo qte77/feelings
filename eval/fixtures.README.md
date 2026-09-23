@@ -28,6 +28,10 @@ modified versions.
 problem (`Near-duplicate of …` docstrings, `_repeat`/`_again`/`_secondary`/
 `Copy` names, "kept for documentation purposes"). Reworded neutrally, code
 unchanged, so Jev must judge the code, not read the label.
+**weakened_tests fix** (2026-09-23): 6 of 7 originally dropped an added `+ assert` line,
+which leaves no trace in a diff, so they were unjudgeable (every model scored 0.56–0.84 AUC
+on them). Each now shows the weakening: `- assert A == B` / `+ assert A`, with the hunk's old
+count bumped. bad-08 (`@pytest.mark.skip`) was already visible.
 **Limits**: "good" labels are manual spot-review, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

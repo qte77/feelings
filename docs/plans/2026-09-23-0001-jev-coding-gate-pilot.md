@@ -181,6 +181,27 @@ Each becomes a row in the next arc if the result is "go".
 | Jev limits (vendor-reported) | 64k tokens per request; 32k for state + the longest question; 1,200 req/min; $0.042 per 1M input tokens (docs.typesafe.ai/models) |
 | Reference designs | Probably: bounded `while` (≤ 5 iterations), confidence gates with `otherwise maybe`, fake providers in tests (github.com/southpolesteve/probably) |
 
+### Harness sweep: research (2026-09-23, subagent; unverified points marked)
+
+- **HarnessRouter** (github.com/HarnessRouter/harnessrouter, Apache-2.0, created 2026-08-09,
+  very active). Verified via the GitHub API.
+  - A self-hosted (Docker) or cloud HTTP gateway in front of many agent CLIs: Claude Code,
+    Codex, Gemini CLI, OpenCode, Aider, … Requests look like the OpenAI Responses API
+    (`POST /{harness_id}/v1/responses`) and can be one-shot (`"stream": false`).
+  - **Unverified:** JSON-schema structured output (the protocol spec page returned 404);
+    auth other than API keys (host logged-in sessions); cost/latency/model fields in
+    responses (only marketing claims seen).
+  - **Decision (default):** defer. Without structured output and session-auth parity, its
+    rows wouldn't be comparable with `claude_gate.py`. Revisit when those are confirmed.
+- **`qte77/coding-harness-eval`**: not cloned in this container (checked
+  `/workspaces/coding-harness-eval` and `/workspaces/qte77/coding-harness-eval`); read on
+  GitHub, last pushed 2026-06-28.
+  - It grades task execution by agents (CC, Cline, opencode, Codebuff, Antigravity).
+  - Only graders exist so far. Runners/collectors are still pending, so there are no
+    adapters to reuse.
+- **Decision (default):** harness runners live in `feelings/eval/`, next to the fixtures,
+  metrics and JSONL contract. `coding-harness-eval` solves a different problem.
+
 ## Remaining work
 
 | # | Item | Gate | Done when |
@@ -188,5 +209,5 @@ Each becomes a row in the next arc if the result is "go".
 | 5 | Key + spend approval | owner (blocked: TypeSafe sign-ups full, 2026-09-23) | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
 | 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
 | 8 | Claude repeat run (k=5) for agreement/spread; light k=1 run shipped, results in Status | owner OKs session usage (≈ 900 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows added to the Status table |
-| 9 | Harness sweep: same judgment across coding harnesses (HarnessRouter vs reusing `coding-harness-eval`) | agent (research in flight) | Recommendation + where the code lives recorded here; if adopted, one runner writing the same JSONL format |
+| 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |
 | 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

@@ -5,6 +5,9 @@
 Claude Code session (`claude -p`, no API key).
 
     uv run eval/claude_gate.py [k] [model] [workers] < eval/fixtures.jsonl > eval/run-claude.jsonl
+
+model defaults to "haiku" (the current Haiku); pass a concrete version such as
+"claude-haiku-4-5-20251001" to pin one. Each record's model_used shows what answered.
 """
 
 import json
@@ -42,6 +45,10 @@ def build_command(state, model):
         "--tools",
         "",
         "--no-session-persistence",
+        # Reason: user settings (e.g. advisorModel, effortLevel) made another model join every
+        # call — ~95% of cost, ~7x slower. cwd is a temp dir, so project/local add nothing.
+        "--setting-sources",
+        "project,local",
         # Reason: with thinking on, Haiku spent ~5k tokens and ~90 s per call on this task.
         "--settings",
         json.dumps({"alwaysThinkingEnabled": False}),
@@ -57,8 +64,17 @@ def build_command(state, model):
 
 
 def cli(argv):
-    # Reason: run outside any repo so no project context leaks into the judgment.
-    done = subprocess.run(argv, capture_output=True, text=True, cwd=tempfile.gettempdir(), check=False)  # noqa: S603
+    # Reason: run outside any repo so no project context leaks into the judgment, and give
+    # claude empty stdin — it reads piped stdin into the prompt, which leaked the whole
+    # fixtures file (labels included) into every call.
+    done = subprocess.run(  # noqa: S603
+        argv,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        cwd=tempfile.gettempdir(),
+        check=False,
+    )
     return done.stdout
 
 
@@ -66,20 +82,25 @@ def check(call, state, model):
     out = json.loads(call(build_command(state, model)) or "{}")
     if out.get("is_error") or not isinstance(out.get("structured_output"), dict):
         raise RuntimeError(f"claude -p failed: {out.get('result') or out.get('api_error_status') or 'no output'}")
-    return {name: float(out["structured_output"][name]) for name in CONCERNS}
+    return {
+        "concerns": {name: float(out["structured_output"][name]) for name in CONCERNS},
+        "cost_usd": out.get("total_cost_usd"),
+        # Reason: aliases like "opus" resolve server-side; record what actually answered.
+        "model_used": ",".join(out.get("modelUsage") or {}) or None,
+    }
 
 
 def run(call, fixtures, k, model, workers=1):
     def one(job):
         fixture, sample = job
         start = time.perf_counter()
-        concerns = check(call, state_for(fixture), model)
+        answer = check(call, state_for(fixture), model)
         return {
             "runner": f"claude-{model}",
             "id": fixture["id"],
             "sample": sample,
             "latency_ms": (time.perf_counter() - start) * 1000,
-            "concerns": concerns,
+            **answer,
         }
 
     jobs = [(fixture, sample) for fixture in fixtures for sample in range(k)]

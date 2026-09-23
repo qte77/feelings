@@ -3,7 +3,7 @@ import statistics
 
 import pytest
 
-from metrics import auc, post_decision, summarize
+from metrics import auc, post_decision, summarize, verdict
 
 CONCERNS = ["scope_creep", "single_use_abstraction", "duplication", "weakened_tests"]
 
@@ -76,6 +76,26 @@ def test_latency_percentiles():
     lat = summarize(recs, fixtures)["latency_ms"]
     assert lat["p50"] == 102.0
     assert lat["p95"] == 104.0
+
+
+def test_single_sample_runs_report_repeatability_as_not_measured():
+    fixtures = [fixture("good"), fixture("bad", "duplication")]
+    recs = records("good", [{}]) + records("bad", [{"duplication": 0.9}])
+    s = summarize(recs, fixtures)
+    assert s["concerns"]["duplication"]["auc_post"] == 1.0
+    assert s["concerns"]["duplication"]["agreement"] is None
+    assert s["concerns"]["duplication"]["mean_std"] is None
+    assert s["concerns"]["duplication"]["post_maybe_rate"] is None  # 4-of-5 needs repeats
+    assert s["zero_std_share"] is None
+    checks = verdict(s)
+    assert not any(name.endswith((".agreement", ".mean_std")) for name in checks)
+
+
+def test_cost_is_summed_when_runners_report_it():
+    fixtures = [fixture("good")]
+    recs = [{**r, "cost_usd": 0.02} for r in records("good", [{}, {}])]
+    assert summarize(recs, fixtures)["cost_usd"] == {"total": pytest.approx(0.04), "per_call": pytest.approx(0.02)}
+    assert summarize(records("good", [{}]), fixtures)["cost_usd"] is None
 
 
 def test_records_for_unknown_fixture_fail_loudly():

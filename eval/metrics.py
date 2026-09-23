@@ -52,6 +52,8 @@ def summarize(records, fixtures):
     ids = list(samples)
     concerns = list(expect[ids[0]])
     is_bad = {fid: any(expect[fid].values()) for fid in ids}
+    # Reason: with one sample per fixture, agreement and spread are trivially perfect, not measured.
+    repeated = min(len(s) for s in samples.values()) > 1
 
     per_concern = {}
     pair_stds = []
@@ -63,15 +65,16 @@ def summarize(records, fixtures):
         per_concern[c] = {
             "auc_pre": auc(labels, [p[0] for p in probs]),
             "auc_post": auc(labels, [statistics.fmean(p) for p in probs]),
-            "agreement": statistics.fmean(len({x >= CLEAR_BELOW for x in p}) == 1 for p in probs),
-            "mean_std": statistics.fmean(stds),
-            "post_maybe_rate": statistics.fmean(post_decision(p) == "maybe" for p in probs),
+            "agreement": statistics.fmean(len({x >= CLEAR_BELOW for x in p}) == 1 for p in probs) if repeated else None,
+            "mean_std": statistics.fmean(stds) if repeated else None,
+            "post_maybe_rate": statistics.fmean(post_decision(p) == "maybe" for p in probs) if repeated else None,
         }
 
     rejected = {fid: any(v >= REJECT_AT for v in samples[fid][0].values()) for fid in ids}
     good = [fid for fid in ids if not is_bad[fid]]
     bad = [fid for fid in ids if is_bad[fid]]
     latencies = [r["latency_ms"] for r in records if r.get("latency_ms") is not None]
+    costs = [r["cost_usd"] for r in records if r.get("cost_usd") is not None]
     return {
         "concerns": per_concern,
         "pre": {
@@ -79,8 +82,9 @@ def summarize(records, fixtures):
             "catch_rate": statistics.fmean(rejected[f] for f in bad) if bad else math.nan,
         },
         # Reason: exact repeats across samples may mean a server-side cache, not consistency.
-        "zero_std_share": statistics.fmean(s == 0.0 for s in pair_stds),
+        "zero_std_share": statistics.fmean(s == 0.0 for s in pair_stds) if repeated else None,
         "latency_ms": {"p50": percentile(latencies, 0.50), "p95": percentile(latencies, 0.95)} if latencies else None,
+        "cost_usd": {"total": sum(costs), "per_call": statistics.fmean(costs)} if costs else None,
     }
 
 
@@ -88,8 +92,9 @@ def verdict(summary):
     checks = {}
     for c, m in summary["concerns"].items():
         checks[f"{c}.auc_post"] = m["auc_post"] >= BARS["auc"]
-        checks[f"{c}.agreement"] = m["agreement"] >= BARS["agreement"]
-        checks[f"{c}.mean_std"] = m["mean_std"] <= BARS["mean_std"]
+        if m["agreement"] is not None:
+            checks[f"{c}.agreement"] = m["agreement"] >= BARS["agreement"]
+            checks[f"{c}.mean_std"] = m["mean_std"] <= BARS["mean_std"]
     checks["pre.false_reject_rate"] = summary["pre"]["false_reject_rate"] <= BARS["false_reject_rate"]
     if summary["latency_ms"]:
         checks["latency.p95"] = summary["latency_ms"]["p95"] <= BARS["p95_ms"]

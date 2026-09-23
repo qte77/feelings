@@ -1,5 +1,6 @@
 .env
 eval/run-*.jsonl
+eval/run-*.err
 eval/one.jsonl
 __pycache__/
 social/*.ttf

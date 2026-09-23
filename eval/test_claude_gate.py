@@ -1,9 +1,11 @@
 import json
+import subprocess
 import threading
 import time
 
 import pytest
 
+import claude_gate
 from claude_gate import SCHEMA, build_command, check, run
 from concerns import CONCERNS
 
@@ -33,9 +35,26 @@ def test_command_uses_the_logged_in_session_with_no_tools_and_no_workspace_confi
     assert json.loads(argv[argv.index("--json-schema") + 1]) == SCHEMA
 
 
+def test_command_skips_user_settings_so_no_advisor_model_or_effort_level_joins_in():
+    argv = build_command("the state", model="haiku")
+    assert argv[argv.index("--setting-sources") + 1] == "project,local"
+
+
 def test_command_turns_thinking_off_for_speed():
     argv = build_command("the state", model="haiku")
     assert json.loads(argv[argv.index("--settings") + 1]) == {"alwaysThinkingEnabled": False}
+
+
+def test_cli_gives_claude_empty_stdin_so_the_fixtures_file_never_leaks_into_the_prompt(monkeypatch):
+    seen = {}
+
+    def fake_run(argv, **kwargs):
+        seen.update(kwargs)
+        return subprocess.CompletedProcess(argv, 0, stdout="{}", stderr="")
+
+    monkeypatch.setattr(claude_gate.subprocess, "run", fake_run)
+    claude_gate.cli(["claude", "-p", "x"])
+    assert seen["stdin"] is subprocess.DEVNULL
 
 
 def test_prompt_asks_the_same_four_questions_about_the_state():
@@ -51,9 +70,14 @@ def test_schema_requires_one_probability_per_concern():
     assert SCHEMA["additionalProperties"] is False
 
 
-def test_check_returns_the_structured_answer():
+def test_check_returns_the_answer_the_model_that_answered_and_the_cost():
     answer = {name: 0.9 for name in CONCERNS}
-    assert check(fake_cli([], answer), "state", model="haiku") == answer
+    call = fake_cli([], answer, total_cost_usd=0.02, modelUsage={"claude-haiku-4-5-20251001": {}})
+    assert check(call, "state", model="haiku") == {
+        "concerns": answer,
+        "cost_usd": 0.02,
+        "model_used": "claude-haiku-4-5-20251001",
+    }
 
 
 def test_check_fails_loudly_on_a_cli_error():
@@ -65,6 +89,7 @@ def test_run_emits_k_timed_records_labelled_with_the_model():
     recs = list(run(fake_cli([]), [FIXTURE], k=2, model="haiku"))
     assert [(r["id"], r["sample"]) for r in recs] == [("good-01", 0), ("good-01", 1)]
     assert all(r["runner"] == "claude-haiku" and r["latency_ms"] >= 0 for r in recs)
+    assert set(recs[0]) >= {"concerns", "cost_usd", "model_used"}
 
 
 def test_run_calls_in_parallel_up_to_the_worker_limit():

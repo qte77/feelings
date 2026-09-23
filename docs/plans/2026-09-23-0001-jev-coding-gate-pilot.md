@@ -14,7 +14,47 @@
 
 Nothing is wired into a real workflow until question 1 is "go".
 
+### Answers (2026-09-23, live Jev `jev-1.13.0`, 60 fixtures × k=5)
+
+1. **Smoke-test pass: go to a properly sized eval, not yet to adoption.** Every bar passes
+   except one near miss (see "What a pass means").
+
+   | runner | scope | single-use | dup | tests | FRR | catch | min agreement | max std | per-request p50 / p95 | blocked |
+   |---|---|---|---|---|---|---|---|---|---|---|
+   | Jev, Python | 0.98 | 0.93 | 0.97 | 0.94 | 0.04 | 0.68 | 0.946 (single-use) | 0.011 | 1.0 / 1.5 s | 4 of 60 |
+   | Jev, BAML | 0.98 | 0.93 | 0.97 | 0.93 | 0.04 | 0.68 | 0.911 (single-use) | 0.012 | — | 4 of 60 |
+
+   - **Fails the agreement bar only on `single_use_abstraction`** (0.946 / 0.911 vs 0.95).
+     It is also "maybe" 25% of the time after 5 samples. "Used only once" can't really be
+     judged from a diff without the rest of the code, so reword or drop that question
+     before a larger eval. The other three questions agree 0.98–1.00.
+   - **Not a cache:** only 8.5% of (fixture, question) pairs repeat exactly.
+   - **Blocked by TypeSafe's Cloudflare WAF:** 4 of 60 fixtures, i.e. 2 source commits
+     (`aea508b`, `001c65f`), each as both its good and bad version. The 403 happens every
+     time, on content alone, and no obvious trigger pattern (SQL, script, shell, path
+     traversal) is present. Any real gate must treat "blocked" as its own outcome
+     (fall back to the slow checks, never block the change).
+   - **Against the Claude baseline** (k=1, same fixtures): Jev ranks about as well as Haiku,
+     below Sonnet 5 and Opus 5.5, and blocks fewer good changes than Haiku (4% vs 13%).
+     It is ~15× faster per request, and an estimated ~50–200× cheaper per call at list
+     price: ≈ $0.00006 (about 1.5k input tokens × $0.042/M; the runner does not log usage)
+     vs $0.005–0.014 measured for Claude.
+2. **Python vs BAML: same quality.** The requests are identical (verified), so the scores
+   match within noise.
+   - End-to-end time for one check, CLI start-up included, 10 runs each:
+     - Python: p50 0.90 s, p95 3.15 s. A first series had one 11.7 s outlier that did not
+       repeat.
+     - BAML: p50 0.86 s, p95 2.94 s.
+     - Both see the same 2–3 s tail, which is on the API side.
+   - Code: `jev_gate.py` + shared `concerns.py` vs `code_gate.baml`. The BAML side needs the
+     nightly toolchain, and the skill-check bypass until `baml agent install` is run.
+   - **Decision:** adopt **Python** (`typesafe-sdk`) for the estate. Every target repo is
+     Python, the SDK is stable and it's testable with a fake transport. Keep the BAML
+     version as the `feelings` showcase.
+
 - **Shipped (branch `feat/jev-coding-gate-pilot`, not yet merged):**
+  - Rows 5–7: key provided 2026-09-23. Spend is estimated at ≈ $0.04 at list price (600
+    requests × ~1.5k tokens; usage isn't logged). Live evals, timing and decisions above. Blocked requests are recorded and skipped (`0fb11da`).
   - Row 1: metrics, with tests.
   - Row 2: Python runner, with tests against a fake Jev server (no key, no spend).
   - Row 4: 60 labelled fixtures from `analyze-stock-kpi` (public, Apache-2.0). Leak-scrubbed:
@@ -28,10 +68,8 @@ Nothing is wired into a real workflow until question 1 is "go".
 - **Next, in order:** the remaining-work table below.
 - **The loop:** agent-only rows first (Phase A). Then one owner sitting for the access
   checklist (Phase B). Then the agent runs both evals and reports (Phase C).
-- **Owner gates:** provide `TYPESAFE_API_KEY`, approve spend of about $0.08 (two runners).
-- **Paused 2026-09-23 — no Jev access.** TypeSafe sign-up returned "Whoops, we're full - check
-  https://x.com/typesafeai for more information!". Rows 5–7 wait for access. Everything else is
-  built, tested offline, and dormant, so the arc resumes at row 5 with no rework.
+- **Owner gates:** none open for this arc (Jev key provided 2026-09-23, after sign-ups
+  had been full earlier that day).
 - **Meanwhile: Claude baseline (row 8).** `eval/claude_gate.py` asks the same four questions
   (shared via `eval/concerns.py`) through the logged-in Claude Code session: `claude -p`,
   no API key. This gives a baseline now; later it becomes the bar Jev has to beat on
@@ -208,8 +246,6 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
-| 5 | Key + spend approval | owner (blocked: TypeSafe sign-ups full, 2026-09-23) | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
-| 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
+| 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); log `usage.input_tokens` per request for real cost | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; cost measured, not estimated |
 | 8 | Claude repeat run (k=5) for agreement/spread; light k=1 run shipped, results in Status | owner OKs session usage (≈ 900 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows added to the Status table |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |
-| 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

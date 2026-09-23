@@ -17,6 +17,10 @@ Nothing is wired into a real workflow until question 1 is "go".
 - **Shipped (branch `feat/jev-coding-gate-pilot`, not yet merged):**
   - Row 1: metrics, with tests.
   - Row 2: Python runner, with tests against a fake Jev server (no key, no spend).
+  - Row 4: 60 labelled fixtures from `analyze-stock-kpi` (public, Apache-2.0). Leak-scrubbed:
+    10 bad records named their own problem and were reworded. Spot-checked by hand: bad-01,
+    05, 10, 15, 24. A dry run of all 60 through the runner and metrics with random fake
+    answers gave AUC ≈ 0.5 and "no-go", as it should.
 - **Next, in order:** the remaining-work table below.
 - **The loop:** agent-only rows first (Phase A). Then one owner sitting for the access
   checklist (Phase B). Then the agent runs both evals and reports (Phase C).
@@ -118,7 +122,7 @@ Each becomes a row in the next arc if the result is "go".
 | Decision | Default |
 |---|---|
 | Model | pinned `jev-1.13.0` in both runners (docs.typesafe.ai/models: `jev-latest` → `jev-1.13.0`; "pin that version's ID" once thresholds are tuned). The shared `Jev` client in `vibes.baml` stays on `jev-latest`. |
-| Fixture source | `analyze-stock-kpi` history: 30 real commits + 30 single-concern mutations. Committed only if that repo is verifiably public, otherwise gitignored. |
+| Fixture source | `analyze-stock-kpi` history: 30 real commits + 30 single-concern mutations (repo verified public, Apache-2.0, so fixtures are committed). |
 | Latency bar | p95 ≤ 3 s for one check, end to end. No latency figure is published by TypeSafe. |
 | Pass bars (`eval/metrics.py` `BARS`) | per-concern post AUC ≥ 0.80 · repeat agreement ≥ 95% · mean per-pair std ≤ 0.02 · pre-check false-reject on good fixtures ≤ 5% |
 | Adopt Python or BAML | Python, unless BAML is clearly better on the comparison table. The adoption targets are Python, and BAML's Jev support is nightly-only. |
@@ -145,7 +149,6 @@ Each becomes a row in the next arc if the result is "go".
 | # | Item | Gate | Done when |
 |---|---|---|---|
 | 3 | Compile + offline-test the BAML runner | owner (install `baml` nightly) → agent | `baml check && baml test` green; `CheckDiff@build_request` body has 4 `noul` questions, `jev-1.13.0`, and the same question text as the Python request |
-| 4 | 60 labelled fixtures | agent → data | `eval/fixtures.jsonl` passes the structural checks in `eval/fixtures.README.md`; 5 fixtures spot-checked by hand |
 | 5 | Key + spend approval | owner | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
 | 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
 | 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

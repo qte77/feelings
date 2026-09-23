@@ -1,5 +1,6 @@
 .env
 eval/run-*.jsonl
 eval/one.jsonl
+__pycache__/
 social/*.ttf
 social/baml-lamb.png

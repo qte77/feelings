@@ -125,6 +125,7 @@ Each becomes a row in the next arc if the result is "go".
 | Fixture source | `analyze-stock-kpi` history: 30 real commits + 30 single-concern mutations (repo verified public, Apache-2.0, so fixtures are committed). |
 | Latency bar | p95 ≤ 3 s for one check, end to end. No latency figure is published by TypeSafe. |
 | Pass bars (`eval/metrics.py` `BARS`) | per-concern post AUC ≥ 0.80 · repeat agreement ≥ 95% · mean per-pair std ≤ 0.02 · pre-check false-reject on good fixtures ≤ 5% |
+| What a pass means | 60 fixtures is smoke-test scale. A pass means "worth a properly sized, calibrated eval", **not** "calibrated". The false-reject bar on 30 good fixtures is ≤ 1 fixture, so one unlucky sample flips it. Treat a one-fixture miss as "re-run / enlarge", not "no-go". |
 | Adopt Python or BAML | Python, unless BAML is clearly better on the comparison table. The adoption targets are Python, and BAML's Jev support is nightly-only. |
 
 ## Source map

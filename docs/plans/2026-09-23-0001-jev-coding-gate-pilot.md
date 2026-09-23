@@ -17,7 +17,11 @@ Nothing is wired into a real workflow until question 1 is "go".
 ### Answers (2026-09-23, live Jev `jev-1.13.0`, 60 fixtures × k=5)
 
 1. **Smoke-test pass: go to a properly sized eval, not yet to adoption.** Every bar passes
-   except one near miss (see "What a pass means").
+   except two near misses (see "What a pass means"):
+   - Repeat agreement on `single_use_abstraction` (below).
+   - End-to-end latency for Python: p95 3.15 s vs the 3 s bar (BAML: 2.94 s). The tail is
+     on the API side, since both runners see it. Per request the p95 is 1.5 s, which is
+     what `metrics.py`'s latency check measures.
 
    | runner | scope | single-use | dup | tests | FRR | catch | min agreement | max std | per-request p50 / p95 | blocked |
    |---|---|---|---|---|---|---|---|---|---|---|
@@ -34,8 +38,12 @@ Nothing is wired into a real workflow until question 1 is "go".
      time, on content alone, and no obvious trigger pattern (SQL, script, shell, path
      traversal) is present. Any real gate must treat "blocked" as its own outcome
      (fall back to the slow checks, never block the change).
-   - **Against the Claude baseline** (k=1, same fixtures): Jev ranks about as well as Haiku,
-     below Sonnet 5 and Opus 5.5, and blocks fewer good changes than Haiku (4% vs 13%).
+   - **Against the Claude baseline** (k=1): Jev ranks about as well as Haiku, below Sonnet 5
+     and Opus 5.5, and blocks fewer good changes than Haiku (4% vs 13%).
+     - Compared on Jev's first sample, to match Claude's k=1: AUC 0.98 / 0.94 / 0.97 / 0.93
+       (Python), nearly identical to the 5-sample means above.
+     - Jev is scored on 56 of the 60 fixtures (the 4 WAF-blocked ones excluded); Claude on
+       all 60.
      It is ~15× faster per request, and an estimated ~50–200× cheaper per call at list
      price: ≈ $0.00006 (about 1.5k input tokens × $0.042/M; the runner does not log usage)
      vs $0.005–0.014 measured for Claude.
@@ -68,12 +76,13 @@ Nothing is wired into a real workflow until question 1 is "go".
 - **Next, in order:** the remaining-work table below.
 - **The loop:** agent-only rows first (Phase A). Then one owner sitting for the access
   checklist (Phase B). Then the agent runs both evals and reports (Phase C).
-- **Owner gates:** none open for this arc (Jev key provided 2026-09-23, after sign-ups
-  had been full earlier that day).
+- **Owner gates:**
+  - Row 8: OK session usage for the Claude k=5 run (≈ 900 calls, ≈ $8 list).
+  - Row 9: pick which harnesses to sweep.
+  - (The Jev key was provided 2026-09-23, after sign-ups had been full earlier that day.)
 - **Meanwhile: Claude baseline (row 8).** `eval/claude_gate.py` asks the same four questions
   (shared via `eval/concerns.py`) through the logged-in Claude Code session: `claude -p`,
-  no API key. This gives a baseline now; later it becomes the bar Jev has to beat on
-  speed and cost.
+  no API key. Compared against Jev in "Answers" above.
   - **Light results (k=1, 8 workers, corrected fixtures, 2026-09-23).** Post AUC per concern;
     FRR = pre-check false rejects on good fixtures; catch = pre-check rejects on bad
     fixtures; cost is list price (`total_cost_usd`), counted against session usage limits:
@@ -205,10 +214,10 @@ Each becomes a row in the next arc if the result is "go".
 | What | Where |
 |---|---|
 | Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`); tests `eval/test_metrics.py` |
-| Python runner | `eval/jev_gate.py` (`CONCERNS`, `MODEL`, `state_for`, `check`, `run`); tests `eval/test_jev_gate.py` |
+| Python runner | `eval/jev_gate.py` (`MODEL`, `check`, `run`, which records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
 | Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |
 | Claude baseline runner | `eval/claude_gate.py` (`SCHEMA`, `build_command`, `cli`, `check`, `run(workers=)`); tests `eval/test_claude_gate.py`; args `[k] [model] [workers]`, model defaults to `haiku` (current Haiku), any concrete id pins a version |
-| BAML runner | `baml_src/code_gate.baml` (`JevPinned`, `Concerns`, `CheckDiff`, `state_for`, `eval_gate`); tests `baml_src/code_gate_test.baml` |
+| BAML runner | `baml_src/code_gate.baml` (`JevPinned`, `Concerns`, `Fixture`, `Sample`, `Failed`/`failed`, `CheckDiff`, `state_for`, `eval_gate`, which catches `ai.errors.InvalidRequest` → `Failed` record); tests `baml_src/code_gate_test.baml` |
 | Lint config for `eval/` | `eval/ruff.toml` |
 | Shared Jev client (`jev-latest`) | `baml_src/vibes.baml:87` |
 | float field = raw Noul probability; class = one question per field | README §4; boundaryml.com/blog/typesafe-ai-jev |
@@ -246,6 +255,6 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
-| 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); log `usage.input_tokens` per request for real cost | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; cost measured, not estimated |
+| 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); log `usage.input_tokens` per request for real cost | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; cost measured, not estimated; reject threshold tuned (catch is 0.68 at the untuned 0.70 despite AUC 0.93–0.98); blocked-run test covers k>1 |
 | 8 | Claude repeat run (k=5) for agreement/spread; light k=1 run shipped, results in Status | owner OKs session usage (≈ 900 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows added to the Status table |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |

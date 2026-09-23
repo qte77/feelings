@@ -193,15 +193,16 @@ Each becomes a row in the next arc if the result is "go".
     responses (only marketing claims seen).
   - **Decision (default):** defer. Without structured output and session-auth parity, its
     rows wouldn't be comparable with `claude_gate.py`. Revisit when those are confirmed.
-- **`coding-agent-eval`** (local `/workspaces/qte77/coding-agent-eval`, origin
-  `github.com/qte77/coding-agent-eval`; the research read it on GitHub as
-  `coding-harness-eval`, likely a rename redirect, unverified). The local README matches
-  that research.
+- **`coding-harness-eval`** (`/workspaces/qte77/coding-harness-eval`,
+  `github.com/qte77/coding-harness-eval`). It was renamed from `coding-agent-eval`: GitHub
+  confirmed the new name via its API on 2026-09-23. The local folder, git remote and
+  Claude Code project data were renamed the same day; the in-repo rename is
+  qte77/coding-harness-eval#54.
   - It grades task execution by agents (CC, Cline, opencode, Codebuff, Antigravity).
   - Only graders exist so far. Runners/collectors are still pending, so there are no
     adapters to reuse.
 - **Decision (default):** harness runners live in `feelings/eval/`, next to the fixtures,
-  metrics and JSONL contract. `coding-agent-eval` solves a different problem.
+  metrics and JSONL contract. `coding-harness-eval` solves a different problem.
 
 ## Remaining work
 

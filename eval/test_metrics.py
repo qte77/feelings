@@ -98,6 +98,19 @@ def test_cost_is_summed_when_runners_report_it():
     assert summarize(records("good", [{}]), fixtures)["cost_usd"] is None
 
 
+def test_errored_records_are_counted_and_left_out_of_scoring():
+    fixtures = [fixture("good"), fixture("bad", "duplication"), fixture("blocked")]
+    recs = (
+        records("good", [{}])
+        + records("bad", [{"duplication": 0.9}])
+        + [{"id": "blocked", "sample": 0, "error": "TypeSafePermissionDeniedError"}]
+    )
+    s = summarize(recs, fixtures)
+    assert s["errors"] == {"count": 1, "fixtures": ["blocked"], "kinds": {"TypeSafePermissionDeniedError": 1}}
+    assert s["concerns"]["duplication"]["auc_post"] == 1.0
+    assert s["pre"]["false_reject_rate"] == 0.0  # "blocked" is not counted as a good fixture
+
+
 def test_records_for_unknown_fixture_fail_loudly():
     with pytest.raises(KeyError):
         summarize(records("nope", [{}]), [fixture("good")])

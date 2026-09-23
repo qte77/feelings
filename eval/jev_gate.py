@@ -11,7 +11,7 @@ import json
 import sys
 import time
 
-from typesafe_sdk import Noul, TypeSafeClient
+from typesafe_sdk import Noul, TypeSafeAPIError, TypeSafeClient
 
 from concerns import CONCERNS, state_for
 
@@ -29,7 +29,13 @@ def run(client, fixtures, k):
         state = state_for(fixture)
         for sample in range(k):
             start = time.perf_counter()
-            concerns = check(client, state)
+            try:
+                concerns = check(client, state)
+            except TypeSafeAPIError as e:
+                # Reason: TypeSafe's Cloudflare WAF 403s some diffs on content alone, every time.
+                # Record it, skip this fixture's remaining repeats, keep the run going.
+                yield {"runner": "python", "id": fixture["id"], "sample": sample, "error": type(e).__name__}
+                break
             latency_ms = (time.perf_counter() - start) * 1000
             yield {
                 "runner": "python",

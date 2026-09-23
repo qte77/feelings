@@ -51,6 +51,23 @@ def test_run_emits_k_timed_records_per_fixture():
     assert set(recs[0]["concerns"]) == set(CONCERNS)
 
 
+def test_run_records_a_blocked_request_and_carries_on():
+    def handler(request):
+        body = json.loads(request.content)
+        if "BLOCKME" in body["state"]:
+            return httpx2.Response(403, text="<html>Sorry, you have been blocked</html>")
+        answers = {name: {"type": "noul", "noul": 0.25} for name in body["questions"]}
+        return httpx2.Response(200, json={"model": body["model"], "usage": {"input_tokens": 1}, "answers": answers})
+
+    client = TypeSafeClient(api_key="test", transport=httpx2.MockTransport(handler))
+    blocked = {**FIXTURE, "id": "blocked", "diff": "+BLOCKME\n"}
+    recs = list(run(client, [blocked, FIXTURE], k=1))
+    assert recs[0]["id"] == "blocked"
+    assert recs[0]["error"] == "TypeSafePermissionDeniedError"
+    assert "concerns" not in recs[0]
+    assert recs[1]["id"] == "good-01" and "concerns" in recs[1]
+
+
 def test_questions_match_the_baml_version_exactly():
     baml = Path(__file__).parent.parent / "baml_src" / "code_gate.baml"
     # Reason: `baml fmt` wraps long descriptions onto their own line with a trailing comma.

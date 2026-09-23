@@ -7,7 +7,7 @@ import json
 import math
 import statistics
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 REJECT_AT = 0.70
 CLEAR_BELOW = 0.50
@@ -47,7 +47,10 @@ def summarize(records, fixtures):
     expect = {f["id"]: f["expect"] for f in fixtures}
     # Reason: group repeats per fixture in sample order; sample 0 is the fast pre-check.
     samples = defaultdict(list)
-    for r in sorted(records, key=lambda r: r["sample"]):
+    errors = [r for r in records if "error" in r]
+    if unknown := {r["id"] for r in errors} - expect.keys():
+        raise KeyError(f"records for unknown fixtures: {sorted(unknown)}")
+    for r in sorted((r for r in records if "error" not in r), key=lambda r: r["sample"]):
         samples[r["id"]].append(r["concerns"])
     ids = list(samples)
     concerns = list(expect[ids[0]])
@@ -85,6 +88,11 @@ def summarize(records, fixtures):
         "zero_std_share": statistics.fmean(s == 0.0 for s in pair_stds) if repeated else None,
         "latency_ms": {"p50": percentile(latencies, 0.50), "p95": percentile(latencies, 0.95)} if latencies else None,
         "cost_usd": {"total": sum(costs), "per_call": statistics.fmean(costs)} if costs else None,
+        "errors": {
+            "count": len(errors),
+            "fixtures": sorted({r["id"] for r in errors}),
+            "kinds": dict(Counter(r["error"] for r in errors)),
+        },
     }
 
 

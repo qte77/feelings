@@ -33,6 +33,17 @@ class Sample {
     concerns: Concerns,
 }
 
+class Failed {
+    runner: string,
+    id: string,
+    sample: int,
+    error: string,
+}
+
+function failed(id: string, sample: int, error: string) -> Failed {
+    Failed { runner: "baml", id: id, sample: sample, error: error }
+}
+
 // No instructions: each field's @description is its question, the prompt is the state.
 function CheckDiff(state: string) -> Concerns {
     client: JevPinned
@@ -51,9 +62,28 @@ function eval_gate(k: int = 5) -> void {
         //# k repeats, one at a time so the Python runner's per-request timings stay comparable
         let i = 0;
         while (i < k) {
-            let rec = Sample { runner: "baml", id: f.id, sample: i, concerns: CheckDiff(state) };
-            baml.io.println(baml.json.to_string(rec));
-            i += 1;
+            //# TypeSafe's Cloudflare WAF 403s some diffs on content alone, every time:
+            //# record it, skip this fixture's remaining repeats, keep the run going
+            let answer: Concerns? = CheckDiff(state) catch_all (e) {
+                let r: ai.errors.InvalidRequest => {
+                    baml.io.println(
+                        baml.json.to_string(failed(f.id, i, `InvalidRequest ${r.status_code ?? 0}`)),
+                    );
+                    null
+                },
+                _ => {
+                    baml.io.println(baml.json.to_string(failed(f.id, i, "error")));
+                    null
+                },
+            };
+            if let c: Concerns = answer {
+                baml.io.println(
+                    baml.json.to_string(Sample { runner: "baml", id: f.id, sample: i, concerns: c }),
+                );
+                i += 1;
+            } else {
+                i = k;
+            }
         }
     }
 }

@@ -36,12 +36,29 @@ Nothing is wired into a real workflow until question 1 is "go".
   (shared via `eval/concerns.py`) through the logged-in Claude Code session: `claude -p`,
   no API key. This gives a baseline now; later it becomes the bar Jev has to beat on
   speed and cost.
-  - **Measured (Haiku, thinking off, 2026-09-23):**
-    - 18–62 s per call. Parallel works: 8 calls with 8 workers took 62 s wall.
-    - About $0.04–0.19 per call at list price (`total_cost_usd`), counted against the
-      session's usage limits.
-    - With thinking on it was ~90 s and ~5k thinking tokens per call, so thinking is
-      turned off.
+  - **Light results (k=1, 8 workers, corrected fixtures, 2026-09-23).** Post AUC per concern;
+    FRR = pre-check false rejects on good fixtures; catch = pre-check rejects on bad
+    fixtures; cost is list price (`total_cost_usd`), counted against session usage limits:
+
+    | model (`model_used`) | scope | single-use | dup | tests | FRR | catch | p50 / p95 | cost / 60 |
+    |---|---|---|---|---|---|---|---|---|
+    | `claude-haiku-4-5-20251001` | 0.99 | 0.91 | 0.97 | 0.96 | 0.13 | 0.73 | 15 / 21 s | $0.32 |
+    | `claude-sonnet-5` | 0.99 | 0.99 | 0.96 | 1.00 | 0.00 | 0.87 | 14 / 18 s | $0.38 |
+    | `claude-opus-5-5` | 0.99 | 1.00 | 1.00 | 1.00 | 0.00 | 0.97 | 19 / 23 s | $0.84 |
+
+    - **Read with care:** k=1, 60 fixtures, synthetic mutations (see "What a pass means").
+      Agreement/spread are not measured at k=1. No model is near the 3 s latency bar
+      under 8-way load; a solo Haiku call took 6.7 s.
+  - **Earlier Claude numbers are invalid; don't reuse them.** Three bugs inflated or
+    contaminated them, all fixed in `claude_gate.py` and each covered by a test:
+    1. `claude -p` read the inherited stdin (the whole fixtures file, labels included)
+       into every prompt. Fixed with `stdin=DEVNULL`.
+    2. User settings added a Fable "advisor" and `effortLevel: xhigh` to every call (~95% of
+       cost, ~7× slower). Fixed with `--setting-sources project,local`.
+    3. Thinking on cost ~5k tokens per call. Fixed with
+       `--settings {"alwaysThinkingEnabled": false}`.
+  - **Fixture fix:** 6 of 7 `weakened_tests` mutations left no trace in the diff and were
+    unjudgeable (every model scored 0.56–0.84 before the fix). See `eval/fixtures.README.md`.
   - **Caveat:** Claude states a number when asked; Jev returns a classifier probability.
     Compare on AUC (ranking), not on the 0.70 cut-off.
 - **Watch-outs:**
@@ -151,7 +168,9 @@ Each becomes a row in the next arc if the result is "go".
 |---|---|
 | Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`); tests `eval/test_metrics.py` |
 | Python runner | `eval/jev_gate.py` (`CONCERNS`, `MODEL`, `state_for`, `check`, `run`); tests `eval/test_jev_gate.py` |
-| BAML runner (uncompiled) | `baml_src/code_gate.baml` (`JevPinned`, `Concerns`, `CheckDiff`, `state_for`, `eval_gate`); tests `baml_src/code_gate_test.baml` |
+| Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |
+| Claude baseline runner | `eval/claude_gate.py` (`SCHEMA`, `build_command`, `cli`, `check`, `run(workers=)`); tests `eval/test_claude_gate.py`; args `[k] [model] [workers]`, model defaults to `haiku` (current Haiku), any concrete id pins a version |
+| BAML runner | `baml_src/code_gate.baml` (`JevPinned`, `Concerns`, `CheckDiff`, `state_for`, `eval_gate`); tests `baml_src/code_gate_test.baml` |
 | Lint config for `eval/` | `eval/ruff.toml` |
 | Shared Jev client (`jev-latest`) | `baml_src/vibes.baml:87` |
 | float field = raw Noul probability; class = one question per field | README §4; boundaryml.com/blog/typesafe-ai-jev |
@@ -168,5 +187,6 @@ Each becomes a row in the next arc if the result is "go".
 |---|---|---|---|
 | 5 | Key + spend approval | owner (blocked: TypeSafe sign-ups full, 2026-09-23) | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
 | 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
-| 8 | Claude (Haiku) baseline run | owner OKs session usage (≈ 300 calls) → agent | `uv run eval/claude_gate.py 5 haiku 8 < eval/fixtures.jsonl > eval/run-claude.jsonl` has 300 records; `metrics.py` output pasted here |
+| 8 | Claude repeat run (k=5) for agreement/spread; light k=1 run shipped, results in Status | owner OKs session usage (≈ 900 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows added to the Status table |
+| 9 | Harness sweep: same judgment across coding harnesses (HarnessRouter vs reusing `coding-harness-eval`) | agent (research in flight) | Recommendation + where the code lives recorded here; if adopted, one runner writing the same JSONL format |
 | 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

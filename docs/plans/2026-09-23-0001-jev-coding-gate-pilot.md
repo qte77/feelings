@@ -29,6 +29,9 @@ Nothing is wired into a real workflow until question 1 is "go".
 - **The loop:** agent-only rows first (Phase A). Then one owner sitting for the access
   checklist (Phase B). Then the agent runs both evals and reports (Phase C).
 - **Owner gates:** provide `TYPESAFE_API_KEY`, approve spend of about $0.08 (two runners).
+- **Paused 2026-09-23 — no Jev access.** TypeSafe sign-up returned "Whoops, we're full - check
+  https://x.com/typesafeai for more information!". Rows 5–7 wait for access. Everything else is
+  built, tested offline, and dormant, so the arc resumes at row 5 with no rework.
 - **Watch-outs:**
   - `baml` refuses to run while the repo's BAML skill files (`.claude/skills/baml-core/`,
     `.agents/skills/baml-core/`, written for `0.20.1`) don't match the toolchain. Until
@@ -151,6 +154,6 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
-| 5 | Key + spend approval | owner | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
+| 5 | Key + spend approval | owner (blocked: TypeSafe sign-ups full, 2026-09-23) | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
 | 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
 | 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

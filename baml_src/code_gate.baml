@@ -8,9 +8,15 @@ client JevPinned = typesafeai.Client.new(model = "jev-1.13.0", api_key = env.TYP
 
 /// "Yes" always means a problem. Each float field is one Noul; its value is the probability.
 class Concerns {
-    scope_creep: float @description("Does this change add functionality beyond what its commit message describes?"),
-    single_use_abstraction: float @description("Does this change introduce an abstraction (class, interface, helper function, or config parameter) that is used only once?"),
-    duplication: float @description("Does this change duplicate logic that already appears elsewhere in the same diff?"),
+    scope_creep: float @description(
+        "Does this change add functionality beyond what its commit message describes?",
+    ),
+    single_use_abstraction: float @description(
+        "Does this change introduce an abstraction (class, interface, helper function, or config parameter) that is used only once?",
+    ),
+    duplication: float @description(
+        "Does this change duplicate logic that already appears elsewhere in the same diff?",
+    ),
     weakened_tests: float @description("Does this change weaken, skip, or delete tests or assertions?"),
 }
 

@@ -21,18 +21,19 @@ Nothing is wired into a real workflow until question 1 is "go".
     10 bad records named their own problem and were reworded. Spot-checked by hand: bad-01,
     05, 10, 15, 24. A dry run of all 60 through the runner and metrics with random fake
     answers gave AUC ≈ 0.5 and "no-go", as it should.
+  - Row 3: BAML runner compiles and passes offline tests on toolchain
+    `0.20.2-nightly.20260922.a`. `CheckDiff@build_request` produces a body identical, as
+    parsed JSON, to the Python runner's request for the same fixture.
+    `eval_gate -- --k 0` parses all 60 fixtures (extra keys are ignored).
 - **Next, in order:** the remaining-work table below.
 - **The loop:** agent-only rows first (Phase A). Then one owner sitting for the access
   checklist (Phase B). Then the agent runs both evals and reports (Phase C).
-- **Owner gates:** install `baml` (nightly), provide `TYPESAFE_API_KEY`, approve spend of
-  about $0.08 (two runners).
+- **Owner gates:** provide `TYPESAFE_API_KEY`, approve spend of about $0.08 (two runners).
 - **Watch-outs:**
-  - `baml_src/code_gate.baml` and `code_gate_test.baml` have **never been compiled**: `baml`
-    could not be installed in the authoring session. Expect small fixes at row 3. Two are
-    already suspected:
-    - whether `baml.json.from_string<Fixture>` accepts the extra fixture keys
-      (`source_sha`, `expect`);
-    - whether `\n` escapes work inside backtick strings.
+  - `baml` refuses to run while the repo's BAML skill files (`.claude/skills/baml-core/`,
+    `.agents/skills/baml-core/`, written for `0.20.1`) don't match the toolchain. Until
+    `baml agent install` refreshes them (a separate chore commit), prefix commands with
+    `BAML_AGENT_SKILL_CHECK=off`.
   - The Python ↔ BAML question text is enforced by `eval/test_jev_gate.py::test_questions_match_the_baml_version_exactly`.
     Change the questions in both files together.
   - Jev's docs say nothing about caching or determinism. `zero_std_share` near 1.0 means
@@ -47,7 +48,8 @@ Nothing is wired into a real workflow until question 1 is "go".
 # offline gates
 uvx ruff check eval/ && uvx ruff format --check eval/
 uv run --no-project --with pytest --with typesafe-sdk pytest eval/ -q --rootdir eval
-baml check && baml test && baml fmt baml_src/*.baml         # after baml is installed
+. "$HOME/.baml/env"; export BAML_AGENT_SKILL_CHECK=off  # see watch-outs
+baml check && baml test && baml fmt baml_src/code_gate*.baml
 
 # Phase C — live (needs TYPESAFE_API_KEY in .env)
 set -a; source .env; set +a
@@ -65,7 +67,7 @@ for i in $(seq 10); do /usr/bin/time -f %e baml run eval_gate -- --k 1 < eval/on
 
 | Need | Why | Status |
 |---|---|---|
-| `baml` CLI, nightly toolchain | BAML runner. Installer: `curl -fsSL https://pkg.boundaryml.com/install.sh \| sh -s` (boundaryml.com/quickstart), then `baml toolchain use nightly && baml toolchain update`. BAML's Jev client is nightly-only ("first be available in the next nightly", boundaryml.com/blog/typesafe-ai-jev) | open. Shell download was permission-denied in the authoring session. |
+| `baml` CLI, nightly toolchain | BAML runner. Installer: `curl -fsSL https://pkg.boundaryml.com/install.sh \| sh -s` (boundaryml.com/quickstart), then `baml toolchain use nightly && baml toolchain update`. BAML's Jev client is nightly-only ("first be available in the next nightly", boundaryml.com/blog/typesafe-ai-jev) | done 2026-09-23 by owner: wrapper 0.2.5, toolchain `0.20.2-nightly.20260922.a`; `. "$HOME/.baml/env"` added to `~/.bashrc` |
 | `TYPESAFE_API_KEY` in `.env` | live eval, both runners (the SDK reads the same variable: `typesafe_sdk.constants.API_KEY_ENV`) | open |
 | Spend approval ≈ $0.08 | per runner: 60 fixtures × k=5 = 300 requests × ~3k tokens ≈ 0.9M input tokens × $0.042/M ≈ $0.04 | open |
 
@@ -149,7 +151,6 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
-| 3 | Compile + offline-test the BAML runner | owner (install `baml` nightly) → agent | `baml check && baml test` green; `CheckDiff@build_request` body has 4 `noul` questions, `jev-1.13.0`, and the same question text as the Python request |
 | 5 | Key + spend approval | owner | `.env` has `TYPESAFE_API_KEY`; ≈ $0.08 approved |
 | 6 | Live eval, both runners + go / no-go | agent | `eval/run-python.jsonl` and `eval/run-baml.jsonl` each have 300 records; `metrics.py` output for both pasted here; each pass bar marked pass/fail |
 | 7 | Speed + code comparison and adoption decision | agent | 10 timed single-check runs per runner (p50/p95); comparison table filled in; decision recorded in this Status section |

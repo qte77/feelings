@@ -53,5 +53,6 @@ def test_run_emits_k_timed_records_per_fixture():
 
 def test_questions_match_the_baml_version_exactly():
     baml = Path(__file__).parent.parent / "baml_src" / "code_gate.baml"
-    fields = dict(re.findall(r'(\w+): float @description\("([^"]+)"\)', baml.read_text()))
+    # Reason: `baml fmt` wraps long descriptions onto their own line with a trailing comma.
+    fields = dict(re.findall(r'(\w+): float @description\(\s*"([^"]+)",?\s*\)', baml.read_text()))
     assert fields == CONCERNS

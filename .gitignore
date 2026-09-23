@@ -1,3 +1,5 @@
 .env
+eval/run-*.jsonl
+eval/one.jsonl
 social/*.ttf
 social/baml-lamb.png

@@ -1,9 +1,10 @@
+import json
 import math
 import statistics
 
 import pytest
 
-from metrics import auc, post_decision, summarize, verdict
+from metrics import auc, export, post_decision, summarize, verdict
 
 CONCERNS = ["scope_creep", "single_use_abstraction", "duplication", "weakened_tests"]
 
@@ -109,6 +110,34 @@ def test_errored_records_are_counted_and_left_out_of_scoring():
     assert s["errors"] == {"count": 1, "fixtures": ["blocked"], "kinds": {"TypeSafePermissionDeniedError": 1}}
     assert s["concerns"]["duplication"]["auc_post"] == 1.0
     assert s["pre"]["false_reject_rate"] == 0.0  # "blocked" is not counted as a good fixture
+
+
+def write_jsonl(path, rows):
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return path
+
+
+def test_export_is_strict_json_for_the_browser(tmp_path):
+    # Only bad fixtures: false_reject_rate is NaN, which JSON.parse rejects if written bare.
+    fixtures = write_jsonl(tmp_path / "fixtures.jsonl", [fixture("bad", "duplication")])
+    run = write_jsonl(tmp_path / "run.jsonl", records("bad", [{"duplication": 0.9}]))
+    out = export([("Jev", run)], fixtures, generated="2026-09-24")
+    text = json.dumps(out, allow_nan=False)  # raises if any NaN survived
+    assert json.loads(text)["runners"][0]["summary"]["pre"]["false_reject_rate"] is None
+
+
+def test_export_keeps_runner_order_with_summary_and_verdict(tmp_path):
+    fixtures = write_jsonl(tmp_path / "fixtures.jsonl", [fixture("good"), fixture("bad", "duplication")])
+    a = write_jsonl(tmp_path / "a.jsonl", records("good", [{}]) + records("bad", [{"duplication": 0.9}]))
+    b = write_jsonl(tmp_path / "b.jsonl", records("good", [{"duplication": 0.9}]) + records("bad", [{}]))
+    out = export([("B", b), ("A", a)], fixtures, generated="2026-09-24")
+    assert out["generated"] == "2026-09-24"
+    assert out["fixtures_total"] == 2
+    assert [r["name"] for r in out["runners"]] == ["B", "A"]
+    a_out = out["runners"][1]
+    assert a_out["summary"]["concerns"]["duplication"]["auc_pre"] == 1.0
+    assert a_out["checks"]["duplication.auc_post"] is True
+    assert a_out["go"] is False  # other concerns have one class only, so their AUC is NaN and fails
 
 
 def test_records_for_unknown_fixture_fail_loudly():

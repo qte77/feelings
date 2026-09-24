@@ -1,8 +1,13 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Score a code-gate eval run: uv run eval/metrics.py <run.jsonl> <fixtures.jsonl>"""
+"""Score a code-gate eval run: uv run eval/metrics.py <run.jsonl> <fixtures.jsonl>
 
+Export several runs for the results page:
+uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl "Name=eval/run-x.jsonl" ...
+"""
+
+import datetime
 import json
 import math
 import statistics
@@ -109,11 +114,43 @@ def verdict(summary):
     return checks
 
 
-def main(run_path, fixtures_path):
-    summary = summarize(load_jsonl(run_path), load_jsonl(fixtures_path))
+def score(records, fixtures):
+    summary = summarize(records, fixtures)
     checks = verdict(summary)
-    print(json.dumps({"summary": summary, "checks": checks, "go": all(checks.values())}, indent=2))
+    return {"summary": summary, "checks": checks, "go": all(checks.values())}
+
+
+def _nan_to_none(value):
+    # Reason: json.dumps writes bare NaN (e.g. an AUC with one class missing), which JSON.parse rejects.
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, dict):
+        return {k: _nan_to_none(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_nan_to_none(v) for v in value]
+    return value
+
+
+def export(runs, fixtures_path, generated):
+    """runs: [(display name, run.jsonl path)], in display order."""
+    fixtures = load_jsonl(fixtures_path)
+    runners = [{"name": name, **score(load_jsonl(path), fixtures)} for name, path in runs]
+    return _nan_to_none({"generated": generated, "fixtures_total": len(fixtures), "runners": runners})
+
+
+def main(argv):
+    if argv[0] == "--export":
+        # metrics.py --export <out.json> <fixtures.jsonl> <name=run.jsonl>...
+        out, fixtures_path, *pairs = argv[1:]
+        runs = [tuple(pair.split("=", 1)) for pair in pairs]
+        data = export(runs, fixtures_path, generated=datetime.datetime.now(datetime.UTC).date().isoformat())
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=1, allow_nan=False)
+            f.write("\n")
+        return
+    run_path, fixtures_path = argv[:2]
+    print(json.dumps(score(load_jsonl(run_path), load_jsonl(fixtures_path)), indent=2))
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(sys.argv[1:])

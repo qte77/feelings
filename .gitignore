@@ -1,3 +1,8 @@
 .env
+# eval: only the labelled fixtures are tracked; run output and scratch inputs never are
+eval/*.jsonl
+!eval/fixtures.jsonl
+eval/*.err
+__pycache__/
 social/*.ttf
 social/baml-lamb.png

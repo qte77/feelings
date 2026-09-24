@@ -1,0 +1,8 @@
+line-length = 120
+
+[lint]
+extend-select = ["I", "B", "UP", "S"]
+ignore = ["S101"]  # pytest asserts
+
+[lint.isort]
+known-first-party = ["claude_gate", "concerns", "jev_gate", "metrics"]

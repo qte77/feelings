@@ -24,6 +24,8 @@ const isJev = (name) => name.startsWith("Jev");
 const fmt = (v, digits = 2) => (v === null || v === undefined ? "—" : v.toFixed(digits));
 const pct = (v) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);
 const secs = (ms) => (ms === null || ms === undefined ? "—" : `${(ms / 1000).toFixed(1)} s`);
+// Jev costs fractions of a cent, so show enough significant digits to be non-zero.
+const usd = (v) => (v === null || v === undefined ? "not logged" : `$${v.toPrecision(2)}`);
 
 // "#686040" -> "rgba(104, 96, 64, a)": a lighter grey over the surface without a new colour token.
 function withAlpha(hex, alpha) {
@@ -36,6 +38,7 @@ function fill(data) {
     const key = el.dataset.fill;
     if (key === "fixtures") el.textContent = data.fixtures_total;
     if (key === "generated") el.textContent = data.generated;
+    if (key === "scored") el.textContent = data.fixtures_scored;
   }
 }
 
@@ -81,7 +84,7 @@ function table(data) {
   th(top, "AUC, first answer", { cols: qs.length, scope: "colgroup" });
   th(top, "Fast first check", { cols: 2, scope: "colgroup" });
   th(top, "Per-request p50 / p95", { rows: 2 });
-  th(top, "Blocked by firewall", { rows: 2 });
+  th(top, "Cost per check", { rows: 2 });
   th(top, "Bars passed", { rows: 2 });
   for (const q of Object.values(QUESTIONS)) th(sub, q);
   th(sub, "Wrongly blocked");
@@ -99,7 +102,7 @@ function table(data) {
       pct(s.pre.false_reject_rate),
       pct(s.pre.catch_rate),
       lat,
-      `${s.errors.fixtures.length} of ${data.fixtures_total}`,
+      usd(s.cost_usd?.per_call),
       `${checks.filter(Boolean).length} of ${checks.length}`,
     ];
     for (const c of cells) row.insertCell().textContent = c;

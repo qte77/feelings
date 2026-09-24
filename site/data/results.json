@@ -1,61 +1,58 @@
 {
  "generated": "2026-09-24",
  "fixtures_total": 60,
+ "fixtures_scored": 60,
  "runners": [
   {
    "name": "Jev, without BAML",
    "summary": {
     "concerns": {
      "scope_creep": {
-      "auc_pre": 0.9825072886297376,
-      "auc_post": 0.9839650145772595,
-      "agreement": 0.9821428571428571,
-      "mean_std": 0.007680773624081797,
-      "post_maybe_rate": 0.05357142857142857
+      "auc_pre": 0.9891826923076923,
+      "auc_post": 0.9855769230769231,
+      "agreement": 1.0,
+      "mean_std": 0.008434948415727877,
+      "post_maybe_rate": 0.05
      },
      "single_use_abstraction": {
-      "auc_pre": 0.9427083333333334,
-      "auc_post": 0.9309895833333334,
-      "agreement": 0.9464285714285714,
-      "mean_std": 0.011292161844533938,
-      "post_maybe_rate": 0.25
+      "auc_pre": 0.9206730769230769,
+      "auc_post": 0.9375,
+      "agreement": 0.95,
+      "mean_std": 0.01233158383745393,
+      "post_maybe_rate": 0.3
      },
      "duplication": {
-      "auc_pre": 0.9693877551020408,
-      "auc_post": 0.9723032069970845,
+      "auc_pre": 0.9716981132075472,
+      "auc_post": 0.9703504043126685,
       "agreement": 1.0,
-      "mean_std": 0.008186336156294228,
-      "post_maybe_rate": 0.05357142857142857
+      "mean_std": 0.007996180412815218,
+      "post_maybe_rate": 0.03333333333333333
      },
      "weakened_tests": {
-      "auc_pre": 0.9283333333333333,
-      "auc_post": 0.9383333333333334,
-      "agreement": 0.9821428571428571,
-      "mean_std": 0.006998202813718876,
-      "post_maybe_rate": 0.017857142857142856
+      "auc_pre": 0.9177897574123989,
+      "auc_post": 0.9487870619946092,
+      "agreement": 0.9833333333333333,
+      "mean_std": 0.007742223299784309,
+      "post_maybe_rate": 0.03333333333333333
      }
     },
     "pre": {
-     "false_reject_rate": 0.03571428571428571,
-     "catch_rate": 0.6785714285714286
+     "false_reject_rate": 0.06666666666666667,
+     "catch_rate": 0.7
     },
-    "zero_std_share": 0.08482142857142858,
+    "zero_std_share": 0.0875,
     "latency_ms": {
-     "p50": 978.0269499997303,
-     "p95": 1461.1952690002
+     "p50": 235.87878700004694,
+     "p95": 292.73643100009394
     },
-    "cost_usd": null,
+    "cost_usd": {
+     "total": 0.038626980000000005,
+     "per_call": 0.0001287566
+    },
     "errors": {
-     "count": 4,
-     "fixtures": [
-      "bad-13-weakened_tests-aea508b",
-      "bad-17-scope_creep-001c65f",
-      "good-13-aea508b",
-      "good-17-001c65f"
-     ],
-     "kinds": {
-      "TypeSafePermissionDeniedError": 4
-     }
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
     }
    },
    "checks": {
@@ -63,7 +60,7 @@
     "scope_creep.agreement": true,
     "scope_creep.mean_std": true,
     "single_use_abstraction.auc_post": true,
-    "single_use_abstraction.agreement": false,
+    "single_use_abstraction.agreement": true,
     "single_use_abstraction.mean_std": true,
     "duplication.auc_post": true,
     "duplication.agreement": true,
@@ -71,7 +68,7 @@
     "weakened_tests.auc_post": true,
     "weakened_tests.agreement": true,
     "weakened_tests.mean_std": true,
-    "pre.false_reject_rate": true,
+    "pre.false_reject_rate": false,
     "latency.p95": true
    },
    "go": false
@@ -81,52 +78,45 @@
    "summary": {
     "concerns": {
      "scope_creep": {
-      "auc_pre": 0.9810495626822158,
-      "auc_post": 0.9795918367346939,
-      "agreement": 0.9821428571428571,
-      "mean_std": 0.009049470430857558,
-      "post_maybe_rate": 0.07142857142857142
+      "auc_pre": 0.9855769230769231,
+      "auc_post": 0.9855769230769231,
+      "agreement": 1.0,
+      "mean_std": 0.007539233483546569,
+      "post_maybe_rate": 0.05
      },
      "single_use_abstraction": {
-      "auc_pre": 0.9401041666666666,
-      "auc_post": 0.9296875,
-      "agreement": 0.9107142857142857,
-      "mean_std": 0.011897044725375505,
-      "post_maybe_rate": 0.25
+      "auc_pre": 0.9194711538461539,
+      "auc_post": 0.9290865384615384,
+      "agreement": 0.9333333333333333,
+      "mean_std": 0.012139952414856454,
+      "post_maybe_rate": 0.2833333333333333
      },
      "duplication": {
-      "auc_pre": 0.9650145772594753,
-      "auc_post": 0.9693877551020408,
+      "auc_pre": 0.977088948787062,
+      "auc_post": 0.9703504043126685,
       "agreement": 1.0,
-      "mean_std": 0.010045483262635338,
-      "post_maybe_rate": 0.05357142857142857
+      "mean_std": 0.008877428743339006,
+      "post_maybe_rate": 0.03333333333333333
      },
      "weakened_tests": {
-      "auc_pre": 0.9166666666666666,
-      "auc_post": 0.9333333333333333,
-      "agreement": 0.9821428571428571,
-      "mean_std": 0.006473864851505762,
-      "post_maybe_rate": 0.017857142857142856
+      "auc_pre": 0.9380053908355795,
+      "auc_post": 0.944743935309973,
+      "agreement": 1.0,
+      "mean_std": 0.007043350293939542,
+      "post_maybe_rate": 0.03333333333333333
      }
     },
     "pre": {
-     "false_reject_rate": 0.03571428571428571,
-     "catch_rate": 0.6785714285714286
+     "false_reject_rate": 0.06666666666666667,
+     "catch_rate": 0.7
     },
-    "zero_std_share": 0.09821428571428571,
+    "zero_std_share": 0.09166666666666666,
     "latency_ms": null,
     "cost_usd": null,
     "errors": {
-     "count": 4,
-     "fixtures": [
-      "bad-13-weakened_tests-aea508b",
-      "bad-17-scope_creep-001c65f",
-      "good-13-aea508b",
-      "good-17-001c65f"
-     ],
-     "kinds": {
-      "InvalidRequest 403": 4
-     }
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
     }
    },
    "checks": {
@@ -142,7 +132,7 @@
     "weakened_tests.auc_post": true,
     "weakened_tests.agreement": true,
     "weakened_tests.mean_std": true,
-    "pre.false_reject_rate": true
+    "pre.false_reject_rate": false
    },
    "go": false
   },

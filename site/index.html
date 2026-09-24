@@ -55,7 +55,7 @@
     <section class="card" aria-labelledby="auc-h">
       <h2 id="auc-h">How well each runner separates good from bad changes</h2>
       <p class="note">AUC per question: 1.0 ranks every bad change above every good one, 0.5 is guessing. Scored on each runner's
-        first answer, so Jev's five repeats and Claude's single run compare fairly. The axis starts at 0.85.</p>
+        first answer, so Jev's five repeats and Claude's single run compare fairly, on the same <span data-fill="scored">56</span> changes. The axis starts at 0.85.</p>
       <div class="chart"><canvas id="auc-chart" role="img" aria-label="Dot plot of AUC per question for each runner; the same numbers are in the table below."></canvas></div>
     </section>
 
@@ -69,8 +69,10 @@
       <noscript><p>The table needs JavaScript. The raw numbers are in <a href="data/results.json">data/results.json</a>.</p></noscript>
       <ul class="notes">
         <li><strong>Wrongly blocked</strong>: share of good changes the fast first check would reject. <strong>Caught</strong>: share of bad changes it rejects.</li>
-        <li><strong>Blocked by firewall</strong>: TypeSafe's Cloudflare firewall answers some changes with HTTP 403 on content alone, every time. Jev is scored on the rest.</li>
-        <li><strong>Per-request time</strong> is not logged by the BAML runner. End-to-end, one check took p50 0.90 s / p95 3.15 s without BAML and 0.86 s / 2.94 s with it (10 runs each).</li>
+        <li><strong>Blocked by firewall</strong>: on 2026-09-23 TypeSafe's Cloudflare firewall answered 4 changes with HTTP 403 on every try; on 2026-09-24 the same changes went through. The tile above counts blocks in the run shown.
+          So that the runners compare like with like, <strong>every runner is scored on the same <span data-fill="scored">56</span> changes</strong>: the ones all of them answered.</li>
+        <li><strong>Cost per check</strong>: Claude's is what the CLI reports at list price. Jev's is measured input tokens × $0.042 per million (typesafe.ai); TypeSafe publishes no output price, so it covers input only. The BAML runner doesn't log usage.</li>
+        <li><strong>Per-request time</strong> is not logged by the BAML runner. End-to-end, one check took p50 0.90 s / p95 3.15 s without BAML and 0.86 s / 2.94 s with it (10 runs each, 2026-09-23). Claude hasn't been timed the same way yet.</li>
         <li><strong>Bars passed</strong> counts the pilot's pass bars (AUC, repeat agreement, false rejects, speed). Claude runs once per change, so its agreement bars aren't measured.</li>
       </ul>
     </section>

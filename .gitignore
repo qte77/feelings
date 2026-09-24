@@ -4,5 +4,9 @@ eval/*.jsonl
 !eval/fixtures.jsonl
 eval/*.err
 __pycache__/
+# BAML's skill lives once, in .claude/skills/baml-core. `baml agent install` also writes a
+# copy to .agents/skills/ (Codex/OpenCode) and backups to baml-old_skills/; keep both out.
+.agents/
+baml-old_skills/
 social/*.ttf
 social/baml-lamb.png

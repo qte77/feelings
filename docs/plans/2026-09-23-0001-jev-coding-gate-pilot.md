@@ -144,10 +144,16 @@ Nothing is wired into a real workflow until question 1 is "go".
   - **Caveat:** Claude states a number when asked; Jev returns a classifier probability.
     Compare on AUC (ranking), not on the 0.70 cut-off.
 - **Watch-outs:**
-  - `baml` refuses to run while the repo's BAML skill files (`.claude/skills/baml-core/`,
-    `.agents/skills/baml-core/`, written for `0.20.1`) don't match the toolchain. Until
-    `baml agent install` refreshes them (a separate chore commit), prefix commands with
-    `BAML_AGENT_SKILL_CHECK=off`.
+  - The BAML skill lives **once**, in `.claude/skills/baml-core/`. The duplicate
+    `.agents/skills/` copy was removed on 2026-09-24, and `.gitignore` keeps it and
+    `baml-old_skills/` out. `baml agent install` rewrites both locations, so after a
+    refresh commit only `.claude/`.
+    - Verified in a scratch clone: `baml check --agent-skill-check require` passes with
+      only the `.claude/` copy.
+    - A symlink doesn't help: `baml agent install` replaces it with a real folder.
+  - `baml` refuses to run while that skill file (written for `0.20.1`) doesn't match the
+    toolchain. Until `baml agent install` refreshes it (a separate chore commit), prefix
+    commands with `BAML_AGENT_SKILL_CHECK=off`.
   - The Python ↔ BAML question text is enforced by `eval/test_jev_gate.py::test_questions_match_the_baml_version_exactly`.
     Change the questions in both files together.
   - Jev's docs say nothing about caching or determinism. `zero_std_share` near 1.0 means

@@ -84,7 +84,11 @@ Nothing is wired into a real workflow until question 1 is "go".
   horizontal page scroll. After a new eval run, re-export `site/data/results.json`
   (see Commands); the deploy runs on push to `main`.
 
-- **Fair comparison (row 11, branch `feat/fair-comparison`):**
+- **Release `v0.1.0` (2026-09-24):** the first tag on the fork. It covers #1–#5 and has no
+  version file or changelog (none exist upstream either); the notes are in the GitHub
+  release.
+
+- **Fair comparison (row 11, qte77/feelings#4, squash-merged 2026-09-24 as `b19ab5f`):**
   - Jev token usage and input cost logged per request.
   - Every runner scored on the fixtures all runs answered.
   - Page gains "scored on N" and a cost-per-check column.

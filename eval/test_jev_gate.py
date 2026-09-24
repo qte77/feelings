@@ -3,9 +3,10 @@ import re
 from pathlib import Path
 
 import httpx2
+import pytest
 from typesafe_sdk import TypeSafeClient
 
-from jev_gate import CONCERNS, MODEL, check, run, state_for
+from jev_gate import CONCERNS, INPUT_USD_PER_M, MODEL, check, cost_usd, run, state_for
 
 FIXTURE = {"id": "good-01", "message": "Add retry to fetch", "diff": "+    retry(fetch)\n"}
 
@@ -38,8 +39,10 @@ def test_state_carries_message_and_diff():
     assert "+    retry(fetch)" in state
 
 
-def test_check_returns_one_probability_per_concern():
-    assert check(fake_client([], noul=0.8), "state") == {name: 0.8 for name in CONCERNS}
+def test_check_returns_one_probability_per_concern_and_the_token_usage():
+    concerns, usage = check(fake_client([], noul=0.8), "state")
+    assert concerns == {name: 0.8 for name in CONCERNS}
+    assert usage == {"input_tokens": 1, "output_tokens": None}  # the fake reports input tokens only
 
 
 def test_run_emits_k_timed_records_per_fixture():
@@ -49,6 +52,14 @@ def test_run_emits_k_timed_records_per_fixture():
     ]
     assert all(r["runner"] == "python" and r["latency_ms"] >= 0 for r in recs)
     assert set(recs[0]["concerns"]) == set(CONCERNS)
+    assert all(r["input_tokens"] == 1 and r["output_tokens"] is None for r in recs)
+    # input tokens x the published input price; TypeSafe publishes no output price
+    assert all(r["cost_usd"] == pytest.approx(1 * INPUT_USD_PER_M / 1_000_000) for r in recs)
+
+
+def test_cost_is_unknown_not_zero_when_usage_is_not_reported():
+    assert cost_usd(None) is None
+    assert cost_usd(1_000_000) == pytest.approx(INPUT_USD_PER_M)
 
 
 def test_run_records_a_blocked_request_and_carries_on():
@@ -61,11 +72,12 @@ def test_run_records_a_blocked_request_and_carries_on():
 
     client = TypeSafeClient(api_key="test", transport=httpx2.MockTransport(handler))
     blocked = {**FIXTURE, "id": "blocked", "diff": "+BLOCKME\n"}
-    recs = list(run(client, [blocked, FIXTURE], k=1))
-    assert recs[0]["id"] == "blocked"
+    recs = list(run(client, [blocked, FIXTURE], k=2))
+    # one error record for the blocked fixture: its second repeat is skipped, not re-sent
+    assert [(r["id"], r["sample"]) for r in recs] == [("blocked", 0), ("good-01", 0), ("good-01", 1)]
     assert recs[0]["error"] == "TypeSafePermissionDeniedError"
     assert "concerns" not in recs[0]
-    assert recs[1]["id"] == "good-01" and "concerns" in recs[1]
+    assert all("concerns" in r for r in recs[1:])
 
 
 def test_questions_match_the_baml_version_exactly():

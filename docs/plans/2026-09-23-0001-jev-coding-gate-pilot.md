@@ -60,14 +60,16 @@ Nothing is wired into a real workflow until question 1 is "go".
      runners as first-class, and compare every run against the Claude CLI runs on equal
      terms, per row 11.
 
-- **Results page (row 13, branch `feat/gh-pages-results`):** https://qte77.github.io/feelings/
-  after merge to `main`. Rendered and checked locally in light/dark × desktop/phone (no console
-  errors, no horizontal page scroll).
+- **Results page (row 13, qte77/feelings#2, squash-merged 2026-09-24 as `985ae64`):** live at
+  https://qte77.github.io/feelings/. The deploy ran in 16 s. The page was checked headlessly in
+  light/dark × desktop/phone, locally and live: no console errors, no failed requests, no
+  horizontal page scroll. After a new eval run, re-export `site/data/results.json`
+  (see Commands); the deploy runs on push to `main`.
 
-- **Shipped (branch `feat/jev-coding-gate-pilot`, PR qte77/feelings#1 on the fork, not yet
-  merged):**
+- **Shipped (qte77/feelings#1 on the fork, squash-merged 2026-09-24 as `af08d0c`):**
   - Rows 5–7: key provided 2026-09-23. Spend is estimated at ≈ $0.04 at list price (600
-    requests × ~1.5k tokens; usage isn't logged). Live evals, timing and decisions above. Blocked requests are recorded and skipped (`0fb11da`).
+    requests × ~1.5k tokens; usage isn't logged). Live evals, timing and decisions above.
+    Blocked requests are recorded and skipped.
   - Row 1: metrics, with tests.
   - Row 2: Python runner, with tests against a fake Jev server (no key, no spend).
   - Row 4: 60 labelled fixtures from `analyze-stock-kpi` (public, Apache-2.0). Leak-scrubbed:

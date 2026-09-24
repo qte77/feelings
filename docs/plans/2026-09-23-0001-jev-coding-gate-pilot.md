@@ -33,20 +33,38 @@ Nothing is wired into a real workflow until question 1 is "go".
      judged from a diff without the rest of the code, so reword or drop that question
      before a larger eval. The other three questions agree 0.98–1.00.
    - **Not a cache:** only 8.5% of (fixture, question) pairs repeat exactly.
-   - **Blocked by TypeSafe's Cloudflare WAF:** 4 of 60 fixtures, i.e. 2 source commits
-     (`aea508b`, `001c65f`), each as both its good and bad version. The 403 happens every
-     time, on content alone, and no obvious trigger pattern (SQL, script, shell, path
-     traversal) is present. Any real gate must treat "blocked" as its own outcome
-     (fall back to the slow checks, never block the change).
+   - **Blocked by TypeSafe's Cloudflare WAF (2026-09-23 only):** 4 of 60 fixtures, i.e. 2
+     source commits (`aea508b`, `001c65f`), each as both its good and bad version. The 403
+     repeated on every try that day, and no obvious trigger pattern (SQL, script, shell,
+     path traversal) was present. **On 2026-09-24 the same fixtures went through: 0 errors
+     in 300 requests.** So the block was a rule that changed, not something fixed in the
+     content. Any real gate must still treat "blocked" as its own outcome (fall back to
+     the slow checks, never block the change).
    - **Against the Claude baseline** (k=1): Jev ranks about as well as Haiku, below Sonnet 5
      and Opus 5.5, and blocks fewer good changes than Haiku (4% vs 13%).
      - Compared on Jev's first sample, to match Claude's k=1: AUC 0.98 / 0.94 / 0.97 / 0.93
        (Python), nearly identical to the 5-sample means above.
      - Jev is scored on 56 of the 60 fixtures (the 4 WAF-blocked ones excluded); Claude on
        all 60.
-     It is ~15× faster per request, and an estimated ~50–200× cheaper per call at list
-     price: ≈ $0.00006 (about 1.5k input tokens × $0.042/M; the runner does not log usage)
-     vs $0.005–0.014 measured for Claude.
+     It is ~15× faster per request, and ~40–110× cheaper per call at list price.
+     - **Measured on 2026-09-24:** median 3,227 input tokens per check (899–5,548), which is
+       $0.00013 per check at $0.042/M. That covers input only, since no output price is
+       published; Jev reports about 80 output tokens.
+     - Claude: $0.005–0.014 per check, measured by the CLI.
+     - The earlier "≈ $0.00006 from ~1.5k tokens" was an estimate and too low by about 2×.
+   - **Re-run 2026-09-24** (both Jev runners, k=5, all 60 fixtures answered; every runner
+     now scored on the same 60). This is what the results page shows.
+     - Jev AUC, first answer: 0.99 / 0.92 / 0.97 / 0.92 without BAML, and 0.99 / 0.92 /
+       0.98 / 0.94 with it.
+     - Near misses are still two, but a different pair: good changes wrongly blocked is
+       **7% on both runners (bar 5%)**, and repeat agreement on `single_use_abstraction`
+       is 0.933 with BAML. Without BAML it's exactly 0.95, so it passes today.
+     - Both come from the same weak question. The two good changes rejected per runner
+       (`good-09`, plus `good-14` or `good-29`) are rejected only on
+       `single_use_abstraction`, one at exactly 0.70, the cut-off. Row 10's reword-or-drop
+       covers both.
+     - Per-request p95 without BAML: 0.29 s, versus 1.5 s on 2026-09-23 (service-side
+       variance).
 2. **Python vs BAML: same quality.** The requests are identical (verified), so the scores
    match within noise.
    - End-to-end time for one check, CLI start-up included, 10 runs each:
@@ -65,6 +83,12 @@ Nothing is wired into a real workflow until question 1 is "go".
   light/dark × desktop/phone, locally and live: no console errors, no failed requests, no
   horizontal page scroll. After a new eval run, re-export `site/data/results.json`
   (see Commands); the deploy runs on push to `main`.
+
+- **Fair comparison (row 11, branch `feat/fair-comparison`):**
+  - Jev token usage and input cost logged per request.
+  - Every runner scored on the fixtures all runs answered.
+  - Page gains "scored on N" and a cost-per-check column.
+  - Claude's end-to-end timing moved to owner-gated row 8.
 
 - **Shipped (qte77/feelings#1 on the fork, squash-merged 2026-09-24 as `af08d0c`):**
   - Rows 5–7: key provided 2026-09-23. Spend is estimated at ≈ $0.04 at list price (600
@@ -143,8 +167,12 @@ uv run eval/jev_gate.py 5 < eval/fixtures.jsonl > eval/run-python.jsonl
 baml run eval_gate < eval/fixtures.jsonl > eval/run-baml.jsonl
 uv run eval/metrics.py eval/run-python.jsonl eval/fixtures.jsonl
 uv run eval/metrics.py eval/run-baml.jsonl eval/fixtures.jsonl
-# end-to-end time for one check (start-up included), 10 runs each
-head -1 eval/fixtures.jsonl > eval/one.jsonl
+# Claude baseline through the logged-in session (no key): [k] [model] [workers]; recorded runs used k=1
+uv run eval/claude_gate.py 1 haiku 8 < eval/fixtures.jsonl > eval/run-claude-haiku.jsonl
+uv run eval/claude_gate.py 1 claude-sonnet-5 8 < eval/fixtures.jsonl > eval/run-claude-claude-sonnet-5.jsonl
+uv run eval/claude_gate.py 1 claude-opus-5-5 8 < eval/fixtures.jsonl > eval/run-claude-claude-opus-5-5.jsonl
+# end-to-end time for one check (start-up included), 10 runs each, on good-14 (the fixture timed on 2026-09-23)
+grep '"id": "good-14' eval/fixtures.jsonl > eval/one.jsonl
 for i in $(seq 10); do /usr/bin/time -f %e uv run eval/jev_gate.py 1 < eval/one.jsonl > /dev/null; done
 for i in $(seq 10); do /usr/bin/time -f %e baml run eval_gate -- --k 1 < eval/one.jsonl > /dev/null; done
 # results page data (committed; CI can't run evals). The deploy runs on push to main.
@@ -226,9 +254,9 @@ Each becomes a row in the next arc if the result is "go".
 
 | What | Where |
 |---|---|
-| Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `export`: several runs → strict JSON, NaN → null); tests `eval/test_metrics.py` |
+| Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `error_summary`, `export`: several runs → strict JSON, NaN → null, every runner scored on the fixtures all runs answered, `fixtures_scored` next to `fixtures_total`, errors from each full run); tests `eval/test_metrics.py` |
 | Results page | `site/index.html`, `site/app.js` (KPI row, AUC dot plot, table), `site/style.css`, `site/data/results.json` (committed export); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
-| Python runner | `eval/jev_gate.py` (`MODEL`, `check`, `run`, which records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
+| Python runner | `eval/jev_gate.py` (`MODEL`, `INPUT_USD_PER_M` with its source, `check` → answers + usage, `cost_usd`, `run`, which writes `input_tokens`/`output_tokens`/`cost_usd` per record, records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
 | Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |
 | Claude baseline runner | `eval/claude_gate.py` (`SCHEMA`, `build_command`, `cli`, `check`, `run(workers=)`); tests `eval/test_claude_gate.py`; args `[k] [model] [workers]`, model defaults to `haiku` (current Haiku), any concrete id pins a version |
 | BAML runner | `baml_src/code_gate.baml` (`JevPinned`, `Concerns`, `Fixture`, `Sample`, `Failed`/`failed`, `CheckDiff`, `state_for`, `eval_gate`, which catches `ai.errors.InvalidRequest` → `Failed` record); tests `baml_src/code_gate_test.baml` |
@@ -269,8 +297,9 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
-| 11 | Fair comparison across runners (Jev without BAML, Jev with BAML, Claude CLI; optionally Claude through BAML, which needs `ANTHROPIC_API_KEY`) | agent (Claude through BAML: owner provides the key) | `metrics.py` takes several run files and scores them on the **same answered fixtures**, reporting first-sample and k-sample metrics side by side; one timing method for all runners (10 single CLI calls, start-up included); Jev token usage logged |
 | 12 | Upstream contribution to `BoundaryML/feelings`: our fork's `main` is identical to upstream's, upstream has had no PRs yet, and its open issue #1 is "No LICENSE file". Candidate: a small BAML-only PR (standalone `code_gate.baml` shell tool + offline tests + README section, results summarised in the PR text) and/or an issue about the WAF 403s. `eval/` and `docs/plans` stay in the fork. | owner: deferred ("not now", 2026-09-23) | Owner decides the scope; then the PR is cut from upstream `main`, not from this branch |
-| 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); log `usage.input_tokens` per request for real cost | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; cost measured, not estimated; reject threshold tuned (catch is 0.68 at the untuned 0.70 despite AUC 0.93–0.98); blocked-run test covers k>1 |
-| 8 | Claude repeat run (k=5) for agreement/spread; light k=1 run shipped, results in Status | owner OKs session usage (≈ 900 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows added to the Status table |
+| 14 | CI for the fork: a `python` job (ruff + pytest on `eval/`, offline) and a `docs` job calling the reusable `qte77/.github/.github/workflows/lint-md-links.yml@main` (caller must grant `issues: write`). A `baml` job only once the nightly toolchain can be installed and pinned in CI. No shared Python test workflow exists in `qte77/.github`. | owner: approve adding CI (proposed 2026-09-24, unanswered) | Pre-staged as an open PR after running markdownlint + lychee locally on the upstream README and the plan; all jobs green on the PR |
+| 15 | Tell TypeSafe about the 2026-09-23 WAF 403s at `github.com/typesafe-ai/typesafe-sdk-python/issues` (public, issues on, no existing 403/Cloudflare issue as of 2026-09-24). The block stopped by 2026-09-24 (0 errors in 300 requests), so it can't be bisected; only an informational issue with Ray ID `a3fb98092e48d4ca` (no IP) is left. | owner: default **don't file** (not reproducible) | Owner either confirms "don't file" (strike the row) or approves a draft, which is posted only after approval |
+| 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); token usage for the BAML runner, if `CheckDiff` can expose it cheaply | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; reject threshold tuned (catch is 0.68 at the untuned 0.70 despite AUC 0.93–0.98) |
+| 8 | Claude repeat run (k=5) for agreement/spread, plus Claude end-to-end timing for one check (10 CLI calls per model, start-up included, same method as Jev; ≈ 30 calls), so every runner is timed the same way. Light k=1 run shipped, results in Status. | owner OKs session usage (≈ 930 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows and end-to-end p50/p95 added to the Status table and the results page |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |

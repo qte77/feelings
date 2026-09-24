@@ -60,7 +60,8 @@ Nothing is wired into a real workflow until question 1 is "go".
      runners as first-class, and compare every run against the Claude CLI runs on equal
      terms, per row 11.
 
-- **Shipped (branch `feat/jev-coding-gate-pilot`, not yet merged):**
+- **Shipped (branch `feat/jev-coding-gate-pilot`, PR qte77/feelings#1 on the fork, not yet
+  merged):**
   - Rows 5–7: key provided 2026-09-23. Spend is estimated at ≈ $0.04 at list price (600
     requests × ~1.5k tokens; usage isn't logged). Live evals, timing and decisions above. Blocked requests are recorded and skipped (`0fb11da`).
   - Row 1: metrics, with tests.

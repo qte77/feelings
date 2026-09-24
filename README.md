@@ -222,3 +222,4 @@ a class whose fields are `bool`, `float`, enums, or literal unions. `string`,
 | [`baml_src/vibes_test.baml`](baml_src/vibes_test.baml) | offline tests that inspect the Jev request shape |
 | [`baml_src/code_gate.baml`](baml_src/code_gate.baml) | pilot: Jev as a fast check on code changes (BAML side) |
 | [`eval/`](eval) | pilot: the same check in Python (`typesafe-sdk`), a Claude CLI baseline (`claude -p`), and metrics comparing all runs on 60 labelled fixtures — see [the plan](docs/plans/2026-09-23-0001-jev-coding-gate-pilot.md) |
+| [`site/`](site) | pilot results page, deployed to [qte77.github.io/feelings](https://qte77.github.io/feelings/) on push to `main`; its data comes from `uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl "Name=eval/run-….jsonl" …` |

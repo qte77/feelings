@@ -60,6 +60,10 @@ Nothing is wired into a real workflow until question 1 is "go".
      runners as first-class, and compare every run against the Claude CLI runs on equal
      terms, per row 11.
 
+- **Results page (row 13, branch `feat/gh-pages-results`):** https://qte77.github.io/feelings/
+  after merge to `main`. Rendered and checked locally in light/dark × desktop/phone (no console
+  errors, no horizontal page scroll).
+
 - **Shipped (branch `feat/jev-coding-gate-pilot`, PR qte77/feelings#1 on the fork, not yet
   merged):**
   - Rows 5–7: key provided 2026-09-23. Spend is estimated at ≈ $0.04 at list price (600
@@ -141,6 +145,12 @@ uv run eval/metrics.py eval/run-baml.jsonl eval/fixtures.jsonl
 head -1 eval/fixtures.jsonl > eval/one.jsonl
 for i in $(seq 10); do /usr/bin/time -f %e uv run eval/jev_gate.py 1 < eval/one.jsonl > /dev/null; done
 for i in $(seq 10); do /usr/bin/time -f %e baml run eval_gate -- --k 1 < eval/one.jsonl > /dev/null; done
+# results page data (committed; CI can't run evals). The deploy runs on push to main.
+uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl \
+  "Jev, without BAML=eval/run-python.jsonl" "Jev, with BAML=eval/run-baml.jsonl" \
+  "Claude Haiku 4.5=eval/run-claude-haiku.jsonl" "Claude Sonnet 5=eval/run-claude-claude-sonnet-5.jsonl" \
+  "Claude Opus 5.5=eval/run-claude-claude-opus-5-5.jsonl"
+python3 -m http.server 8137 --directory site   # preview at http://localhost:8137/
 ```
 
 ### Arc-start access checklist (owner, once)
@@ -214,7 +224,8 @@ Each becomes a row in the next arc if the result is "go".
 
 | What | Where |
 |---|---|
-| Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`); tests `eval/test_metrics.py` |
+| Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `export`: several runs → strict JSON, NaN → null); tests `eval/test_metrics.py` |
+| Results page | `site/index.html`, `site/app.js` (KPI row, AUC dot plot, table), `site/style.css`, `site/data/results.json` (committed export); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
 | Python runner | `eval/jev_gate.py` (`MODEL`, `check`, `run`, which records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
 | Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |
 | Claude baseline runner | `eval/claude_gate.py` (`SCHEMA`, `build_command`, `cli`, `check`, `run(workers=)`); tests `eval/test_claude_gate.py`; args `[k] [model] [workers]`, model defaults to `haiku` (current Haiku), any concrete id pins a version |

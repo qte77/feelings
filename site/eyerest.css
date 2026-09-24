@@ -1,0 +1,204 @@
+/*
+ * eyerest.css — qte77 UI-branding COLOR tokens (EyeRest design system).
+ *
+ * GENERATED from ../DESIGN.md by scripts/gen_ui_kit.py — DO NOT HAND-EDIT.
+ * Source of truth: brand/DESIGN.md (`colors` / `data` / `data-dark` / `variants`).
+ * Regenerate: `make -C brand ui_kit`. Token values are audited by gui-check.py.
+ *
+ * COLOR only. Pair with layout.css (spacing/shape) and fonts.css (type).
+ * Cascade: System = no [data-theme] (prefers-color-scheme); Light/Dark =
+ * html[data-theme]; Variant = html[data-variant], combine with data-theme.
+ * Zero blue in any accent — the brand's core rule.
+ */
+
+/* Default (EyeRest flagship) — light */
+
+:root {
+  color-scheme: light dark;
+  --bg: #ece8d8;
+  --surface: #e2dec8;
+  --border: #c8c4b0;
+  --text: #2c2818;
+  --text-muted: #686040;
+  --primary: #7a6010;
+  --primary-on: #ece8d8;
+  --data-positive: #4a6818;
+  --data-caution: #787010;
+  --data-negative: #983828;
+  --data-alt: #587818;
+  --shadow-card: 0 1px 2px rgba(28, 26, 20, 0.06), 0 4px 12px rgba(28, 26, 20, 0.08);
+}
+
+/* Default — dark (system-dark, then the explicit attribute) */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1a14;
+    --surface: #242018;
+    --border: #383428;
+    --text: #d8d0b8;
+    --text-muted: #a89878;
+    --primary: #c8a858;
+    --primary-on: #1c1a14;
+    --data-positive: #8aa860;
+    --data-caution: #c8b868;
+    --data-negative: #c08060;
+    --data-alt: #a8b870;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1c1a14;
+  --surface: #242018;
+  --border: #383428;
+  --text: #d8d0b8;
+  --text-muted: #a89878;
+  --primary: #c8a858;
+  --primary-on: #1c1a14;
+  --data-positive: #8aa860;
+  --data-caution: #c8b868;
+  --data-negative: #c08060;
+  --data-alt: #a8b870;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+/* Variant: EyeRest Green */
+
+:root[data-variant="green"] {
+  --bg: #f0f6ee;
+  --surface: #e8f0e6;
+  --border: #c0d4bc;
+  --text: #2a4a2a;
+  --text-muted: #4a6a4a;
+  --primary: #2a6a2a;
+  --primary-on: #f0f6ee;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-variant="green"]:not([data-theme="light"]) {
+    --bg: #0c1610;
+    --surface: #12201a;
+    --border: #2a3e2c;
+    --text: #8cb888;
+    --text-muted: #7aa878;
+    --primary: #3a6a3a;
+    --primary-on: #c4e8c0;
+  }
+}
+
+:root[data-variant="green"][data-theme="dark"] {
+  --bg: #0c1610;
+  --surface: #12201a;
+  --border: #2a3e2c;
+  --text: #8cb888;
+  --text-muted: #7aa878;
+  --primary: #3a6a3a;
+  --primary-on: #c4e8c0;
+}
+
+/* Variant: EyeRest BluBlock */
+
+:root[data-variant="blublock"] {
+  --bg: #f5ecd8;
+  --surface: #ede3cc;
+  --border: #c8b898;
+  --text: #3d2e18;
+  --text-muted: #6b5838;
+  --primary: #c06010;
+  --primary-on: #f5ecd8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-variant="blublock"]:not([data-theme="light"]) {
+    --bg: #1a1208;
+    --surface: #231a0e;
+    --border: #3d2e1a;
+    --text: #e8d5b0;
+    --text-muted: #a08b6d;
+    --primary: #e89030;
+    --primary-on: #1a1208;
+  }
+}
+
+:root[data-variant="blublock"][data-theme="dark"] {
+  --bg: #1a1208;
+  --surface: #231a0e;
+  --border: #3d2e1a;
+  --text: #e8d5b0;
+  --text-muted: #a08b6d;
+  --primary: #e89030;
+  --primary-on: #1a1208;
+}
+
+/* Variant: EyeRest Dusk */
+
+:root[data-variant="dusk"] {
+  --bg: #eaece2;
+  --surface: #e0e3d7;
+  --border: #c8cac0;
+  --text: #2c2622;
+  --text-muted: #6a6058;
+  --primary: #7a5820;
+  --primary-on: #eaece2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-variant="dusk"]:not([data-theme="light"]) {
+    --bg: #1f1b22;
+    --surface: #2a2630;
+    --border: #3a343e;
+    --text: #d8ccbc;
+    --text-muted: #b0a498;
+    --primary: #c8a468;
+    --primary-on: #1f1b22;
+  }
+}
+
+:root[data-variant="dusk"][data-theme="dark"] {
+  --bg: #1f1b22;
+  --surface: #2a2630;
+  --border: #3a343e;
+  --text: #d8ccbc;
+  --text-muted: #b0a498;
+  --primary: #c8a468;
+  --primary-on: #1f1b22;
+}
+
+/* Variant: EyeRest SaaS */
+
+:root[data-variant="saas"] {
+  --bg: #f4f6f4;
+  --surface: #e9ece9;
+  --border: #ccd2cc;
+  --text: #1a201c;
+  --text-muted: #5a635c;
+  --primary: #1f6e4c;
+  --primary-on: #eef1ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-variant="saas"]:not([data-theme="light"]) {
+    --bg: #0f1512;
+    --surface: #161d19;
+    --border: #28322c;
+    --text: #e6ece8;
+    --text-muted: #9aa8a0;
+    --primary: #4fae82;
+    --primary-on: #14201a;
+  }
+}
+
+:root[data-variant="saas"][data-theme="dark"] {
+  --bg: #0f1512;
+  --surface: #161d19;
+  --border: #28322c;
+  --text: #e6ece8;
+  --text-muted: #9aa8a0;
+  --primary: #4fae82;
+  --primary-on: #14201a;
+}
+
+/* Base color application */
+
+body { background: var(--bg); color: var(--text); }

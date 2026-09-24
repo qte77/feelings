@@ -93,11 +93,15 @@ def summarize(records, fixtures):
         "zero_std_share": statistics.fmean(s == 0.0 for s in pair_stds) if repeated else None,
         "latency_ms": {"p50": percentile(latencies, 0.50), "p95": percentile(latencies, 0.95)} if latencies else None,
         "cost_usd": {"total": sum(costs), "per_call": statistics.fmean(costs)} if costs else None,
-        "errors": {
-            "count": len(errors),
-            "fixtures": sorted({r["id"] for r in errors}),
-            "kinds": dict(Counter(r["error"] for r in errors)),
-        },
+        "errors": error_summary(errors),
+    }
+
+
+def error_summary(errors):
+    return {
+        "count": len(errors),
+        "fixtures": sorted({r["id"] for r in errors}),
+        "kinds": dict(Counter(r["error"] for r in errors)),
     }
 
 
@@ -132,10 +136,28 @@ def _nan_to_none(value):
 
 
 def export(runs, fixtures_path, generated):
-    """runs: [(display name, run.jsonl path)], in display order."""
+    """runs: [(display name, run.jsonl path)], in display order.
+
+    Every runner is scored on the same fixtures: those that all runs answered. A fixture one
+    runner never got an answer for (e.g. WAF-blocked) is left out for all of them, so the numbers
+    compare like with like. Errors are still reported against each runner's full run.
+    """
     fixtures = load_jsonl(fixtures_path)
-    runners = [{"name": name, **score(load_jsonl(path), fixtures)} for name, path in runs]
-    return _nan_to_none({"generated": generated, "fixtures_total": len(fixtures), "runners": runners})
+    known = {f["id"] for f in fixtures}
+    loaded = [(name, load_jsonl(path)) for name, path in runs]
+    for name, records in loaded:
+        if unknown := {r["id"] for r in records} - known:
+            raise KeyError(f"{name}: records for unknown fixtures: {sorted(unknown)}")
+    common = set.intersection(*({r["id"] for r in records if "error" not in r} for _, records in loaded))
+    scored = [f for f in fixtures if f["id"] in common]
+    runners = []
+    for name, records in loaded:
+        result = score([r for r in records if r["id"] in common], scored)
+        result["summary"]["errors"] = error_summary([r for r in records if "error" in r])
+        runners.append({"name": name, **result})
+    return _nan_to_none(
+        {"generated": generated, "fixtures_total": len(fixtures), "fixtures_scored": len(scored), "runners": runners}
+    )
 
 
 def main(argv):

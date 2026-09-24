@@ -140,6 +140,41 @@ def test_export_keeps_runner_order_with_summary_and_verdict(tmp_path):
     assert a_out["go"] is False  # other concerns have one class only, so their AUC is NaN and fails
 
 
+def test_export_scores_every_runner_on_the_fixtures_all_of_them_answered(tmp_path):
+    fixtures = write_jsonl(
+        tmp_path / "fixtures.jsonl",
+        [fixture("good"), fixture("bad", "duplication"), fixture("bad2", "duplication")],
+    )
+    # A answers everything but gets bad2 wrong; B is blocked on bad2.
+    a = write_jsonl(
+        tmp_path / "a.jsonl",
+        records("good", [{}]) + records("bad", [{"duplication": 0.9}]) + records("bad2", [{"duplication": 0.05}]),
+    )
+    b = write_jsonl(
+        tmp_path / "b.jsonl",
+        records("good", [{}])
+        + records("bad", [{"duplication": 0.9}])
+        + [{"id": "bad2", "sample": 0, "error": "TypeSafePermissionDeniedError"}],
+    )
+    out = export([("A", a), ("B", b)], fixtures, generated="2026-09-24")
+    assert out["fixtures_total"] == 3
+    assert out["fixtures_scored"] == 2
+    a_out, b_out = out["runners"]
+    # bad2 is left out for A too, so A's miss on it doesn't count
+    assert a_out["summary"]["concerns"]["duplication"]["auc_pre"] == 1.0
+    assert b_out["summary"]["concerns"]["duplication"]["auc_pre"] == 1.0
+    # errors are still reported against each runner's full run
+    assert a_out["summary"]["errors"]["count"] == 0
+    assert b_out["summary"]["errors"]["fixtures"] == ["bad2"]
+
+
+def test_export_fails_loudly_on_records_for_unknown_fixtures(tmp_path):
+    fixtures = write_jsonl(tmp_path / "fixtures.jsonl", [fixture("good")])
+    run = write_jsonl(tmp_path / "run.jsonl", records("good", [{}]) + records("typo", [{}]))
+    with pytest.raises(KeyError, match="typo"):
+        export([("A", run)], fixtures, generated="2026-09-24")
+
+
 def test_records_for_unknown_fixture_fail_loudly():
     with pytest.raises(KeyError):
         summarize(records("nope", [{}]), [fixture("good")])

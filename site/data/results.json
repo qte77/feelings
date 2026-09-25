@@ -1,0 +1,234 @@
+{
+ "generated": "2026-09-25",
+ "fixtures_total": 184,
+ "fixtures_scored": 184,
+ "runners": [
+  {
+   "name": "Jev, without BAML",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9056332236842105,
+      "auc_post": 0.910875822368421,
+      "agreement": 0.967391304347826,
+      "mean_std": 0.010797910718500078,
+      "post_maybe_rate": 0.20108695652173914
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.8943739658025373,
+      "auc_post": 0.9043022614451186,
+      "agreement": 0.9728260869565217,
+      "mean_std": 0.010626513784166049,
+      "post_maybe_rate": 0.08695652173913043
+     },
+     "duplication": {
+      "auc_pre": 0.9822510822510823,
+      "auc_post": 0.9853896103896104,
+      "agreement": 0.9945652173913043,
+      "mean_std": 0.009411233511696463,
+      "post_maybe_rate": 0.03260869565217391
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9867965367965368,
+      "auc_post": 0.9901515151515151,
+      "agreement": 0.9728260869565217,
+      "mean_std": 0.007222627376180997,
+      "post_maybe_rate": 0.07065217391304347
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.784
+    },
+    "zero_std_share": 0.09646739130434782,
+    "latency_ms": {
+     "p50": 230.29359500105784,
+     "p95": 278.2740870006819
+    },
+    "cost_usd": {
+     "total": 0.10719702,
+     "per_call": 0.0001165185
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "scope_creep.agreement": true,
+    "scope_creep.mean_std": true,
+    "single_use_abstraction.auc_post": true,
+    "single_use_abstraction.agreement": true,
+    "single_use_abstraction.mean_std": true,
+    "duplication.auc_post": true,
+    "duplication.agreement": true,
+    "duplication.mean_std": true,
+    "weakened_tests.auc_post": true,
+    "weakened_tests.agreement": true,
+    "weakened_tests.mean_std": true,
+    "pre.false_reject_rate": true,
+    "latency.p95": true
+   },
+   "go": true,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.13559322033898305,
+     "catch_rate": 0.88
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.1016949152542373,
+     "catch_rate": 0.864
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.06779661016949153,
+     "catch_rate": 0.832
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.816
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.784
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.76
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.648
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.544
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.264
+    }
+   ]
+  },
+  {
+   "name": "Jev, with BAML",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9061472039473685,
+      "auc_post": 0.9093338815789473,
+      "agreement": 0.9891304347826086,
+      "mean_std": 0.010250633387555328,
+      "post_maybe_rate": 0.19021739130434784
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9109211252068395,
+      "auc_post": 0.9052215480786909,
+      "agreement": 0.9836956521739131,
+      "mean_std": 0.011145880657278937,
+      "post_maybe_rate": 0.08152173913043478
+     },
+     "duplication": {
+      "auc_pre": 0.9829004329004329,
+      "auc_post": 0.9846320346320346,
+      "agreement": 0.9945652173913043,
+      "mean_std": 0.010320844818293554,
+      "post_maybe_rate": 0.03260869565217391
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9899350649350649,
+      "auc_post": 0.9905844155844156,
+      "agreement": 0.9782608695652174,
+      "mean_std": 0.007166566873719754,
+      "post_maybe_rate": 0.06521739130434782
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.792
+    },
+    "zero_std_share": 0.07744565217391304,
+    "latency_ms": null,
+    "cost_usd": null,
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "scope_creep.agreement": true,
+    "scope_creep.mean_std": true,
+    "single_use_abstraction.auc_post": true,
+    "single_use_abstraction.agreement": true,
+    "single_use_abstraction.mean_std": true,
+    "duplication.auc_post": true,
+    "duplication.agreement": true,
+    "duplication.mean_std": true,
+    "weakened_tests.auc_post": true,
+    "weakened_tests.agreement": true,
+    "weakened_tests.mean_std": true,
+    "pre.false_reject_rate": true
+   },
+   "go": true,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.11864406779661017,
+     "catch_rate": 0.864
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.1016949152542373,
+     "catch_rate": 0.848
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.03389830508474576,
+     "catch_rate": 0.824
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.03389830508474576,
+     "catch_rate": 0.816
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.792
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.744
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.656
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.52
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.256
+    }
+   ]
+  }
+ ]
+}

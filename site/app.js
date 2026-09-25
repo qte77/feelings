@@ -1,4 +1,5 @@
-// Fills the results page from data/results.json (written by eval/metrics.py --export).
+// Fills the results page from data/*.json (written by eval/metrics.py --export).
+// Two sections share these renderers: the sized eval (results.json) and the frozen pilot.
 import { onThemePalette } from "./chart-theme.js";
 
 const QUESTIONS = {
@@ -7,6 +8,8 @@ const QUESTIONS = {
   duplication: "Duplication",
   weakened_tests: "Weakened tests",
 };
+// The pilot asked the abstraction question in its old wording; label it as such (short, so it fits on phones).
+const PILOT_QUESTIONS = { ...QUESTIONS, single_use_abstraction: "Used once (old)" };
 // Emphasis, not categorical: Jev in the brand primary, Claude as grey context.
 // Identity never rests on colour alone: each runner has its own marker shape, a legend and the table.
 // Filled shapes only: Chart.js draws star/cross as outlines, which the surface-coloured ring would hide.
@@ -33,8 +36,8 @@ function withAlpha(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-function fill(data) {
-  for (const el of document.querySelectorAll("[data-fill]")) {
+function fill(section, data) {
+  for (const el of section.querySelectorAll("[data-fill]")) {
     const key = el.dataset.fill;
     if (key === "fixtures") el.textContent = data.fixtures_total;
     if (key === "generated") el.textContent = data.generated;
@@ -42,9 +45,10 @@ function fill(data) {
   }
 }
 
-function kpis(data) {
+function kpis(section, data) {
   const jev = data.runners.find((r) => r.name === "Jev, without BAML");
-  if (!jev) return;
+  const target = section.querySelector(".kpis");
+  if (!jev || !target) return;
   const s = jev.summary;
   const aucs = Object.values(s.concerns).map((c) => c.auc_pre);
   const items = [
@@ -53,7 +57,7 @@ function kpis(data) {
     ["Per-request time, p95", secs(s.latency_ms?.p95)],
     ["Blocked by firewall", `${s.errors.fixtures.length} of ${data.fixtures_total}`],
   ];
-  document.getElementById("kpis").replaceChildren(
+  target.replaceChildren(
     ...items.map(([label, value]) => {
       const div = document.createElement("div");
       const dt = document.createElement("dt");
@@ -66,35 +70,36 @@ function kpis(data) {
   );
 }
 
-function table(data) {
-  const qs = Object.keys(QUESTIONS);
+function header(row, text, { cols = 1, rows = 1, scope = "col" } = {}) {
+  const cell = document.createElement("th");
+  cell.textContent = text;
+  cell.colSpan = cols;
+  cell.rowSpan = rows;
+  cell.scope = scope;
+  row.append(cell);
+}
+
+function table(section, data, questions) {
+  const qs = Object.keys(questions);
   // Two header rows: grouped columns keep the table narrow enough to read without scrolling on desktop.
   const thead = document.createElement("thead");
   const top = thead.insertRow();
   const sub = thead.insertRow();
-  const th = (row, text, { cols = 1, rows = 1, scope = "col" } = {}) => {
-    const cell = document.createElement("th");
-    cell.textContent = text;
-    cell.colSpan = cols;
-    cell.rowSpan = rows;
-    cell.scope = scope;
-    row.append(cell);
-  };
-  th(top, "Runner", { rows: 2 });
-  th(top, "AUC, first answer", { cols: qs.length, scope: "colgroup" });
-  th(top, "Fast first check", { cols: 2, scope: "colgroup" });
-  th(top, "Per-request p50 / p95", { rows: 2 });
-  th(top, "Cost per check", { rows: 2 });
-  th(top, "Bars passed", { rows: 2 });
-  for (const q of Object.values(QUESTIONS)) th(sub, q);
-  th(sub, "Wrongly blocked");
-  th(sub, "Caught");
+  header(top, "Runner", { rows: 2 });
+  header(top, "AUC, first answer", { cols: qs.length, scope: "colgroup" });
+  header(top, "Fast first check", { cols: 2, scope: "colgroup" });
+  header(top, "Per-request p50 / p95", { rows: 2 });
+  header(top, "Cost per check", { rows: 2 });
+  header(top, "Bars passed", { rows: 2 });
+  for (const q of Object.values(questions)) header(sub, q);
+  header(sub, "Wrongly blocked");
+  header(sub, "Caught");
   const tbody = document.createElement("tbody");
   for (const r of data.runners) {
     const s = r.summary;
     const row = tbody.insertRow();
     if (isJev(r.name)) row.className = "jev";
-    th(row, r.name, { scope: "row" });
+    header(row, r.name, { scope: "row" });
     const lat = s.latency_ms ? `${secs(s.latency_ms.p50)} / ${secs(s.latency_ms.p95)}` : "not logged";
     const checks = Object.values(r.checks);
     const cells = [
@@ -107,13 +112,44 @@ function table(data) {
     ];
     for (const c of cells) row.insertCell().textContent = c;
   }
-  document.getElementById("results").append(thead, tbody);
+  section.querySelector("table.results").append(thead, tbody);
 }
 
-function chart(data) {
-  const labels = Object.values(QUESTIONS);
-  const qs = Object.keys(QUESTIONS);
-  const c = new Chart(document.getElementById("auc-chart"), {
+// Threshold trade-off of the fast first check, one row per threshold, one column pair per runner.
+function sweepTable(section, data) {
+  const target = section.querySelector("table.sweep");
+  if (!target) return;
+  const runners = data.runners.filter((r) => r.sweep);
+  const thead = document.createElement("thead");
+  const top = thead.insertRow();
+  const sub = thead.insertRow();
+  header(top, "Reject at", { rows: 2 });
+  for (const r of runners) header(top, r.name, { cols: 2, scope: "colgroup" });
+  for (const _ of runners) {
+    header(sub, "Wrongly blocked");
+    header(sub, "Caught");
+  }
+  const tbody = document.createElement("tbody");
+  runners[0].sweep.forEach((first, i) => {
+    const row = tbody.insertRow();
+    header(row, first.threshold.toFixed(2), { scope: "row" });
+    for (const r of runners) {
+      row.insertCell().textContent = pct(r.sweep[i].false_reject_rate);
+      row.insertCell().textContent = pct(r.sweep[i].catch_rate);
+    }
+  });
+  target.append(thead, tbody);
+}
+
+function chart(section, data, questions) {
+  const labels = Object.values(questions);
+  const qs = Object.keys(questions);
+  const aucs = data.runners.flatMap((r) => qs.map((q) => r.summary.concerns[q].auc_pre)).filter((v) => v !== null);
+  // Start the axis at the 0.05 step below the lowest score, never above 0.85; the note says where it starts.
+  const min = Math.min(0.85, Math.floor(Math.min(...aucs) * 20) / 20);
+  const axisNote = section.querySelector("[data-fill=axis-min]");
+  if (axisNote) axisNote.textContent = min.toFixed(2);
+  const c = new Chart(section.querySelector("canvas"), {
     type: "scatter",
     data: {
       datasets: data.runners.map((r, i) => ({
@@ -131,7 +167,7 @@ function chart(data) {
       maintainAspectRatio: false,
       animation: false,
       scales: {
-        x: { min: 0.85, max: 1.0, ticks: { stepSize: 0.05 }, title: { display: true, text: "AUC (first answer)" } },
+        x: { min, max: 1.0, ticks: { stepSize: 0.05 }, title: { display: true, text: "AUC (first answer)" } },
         y: {
           type: "linear",
           reverse: true,
@@ -173,8 +209,15 @@ function chart(data) {
   });
 }
 
-const data = await (await fetch("data/results.json")).json();
-fill(data);
-kpis(data);
-table(data);
-chart(data);
+async function render(id, url, questions) {
+  const section = document.getElementById(id);
+  const data = await (await fetch(url)).json();
+  fill(section, data);
+  kpis(section, data);
+  chart(section, data, questions);
+  table(section, data, questions);
+  sweepTable(section, data);
+}
+
+await render("sized", "data/results.json", QUESTIONS);
+await render("pilot", "data/pilot-2026-09-24.json", PILOT_QUESTIONS);

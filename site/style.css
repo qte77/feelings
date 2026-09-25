@@ -59,9 +59,9 @@ h2 {
   margin: 0;
 }
 
+/* Full column width, like the status line below it. */
 .lede {
   font-size: 1.1rem;
-  max-width: 62ch;
   margin: 0 0 12px;
 }
 

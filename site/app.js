@@ -66,17 +66,20 @@ function answer(sized) {
   const pre = jev.pre;
   const flagged = Math.round(pre.false_reject_rate * pre.n_good);
   const caught = Math.round(pre.catch_rate * pre.n_bad);
+  // Say what "problem" and "clean" mean here: how the test set was built (eval/fixtures.README.md).
   document.getElementById("verdict").textContent =
-    `On ${sized.fixtures_total} labelled code changes, it caught ${pct(pre.catch_rate)} of problem changes and ` +
-    `wrongly flagged ${flagged} of ${pre.n_good} good ones, in ${secs(jev.latency_ms.p95)} for ` +
-    `${usd(jev.cost_usd.per_call)} per check.`;
+    `We gave it ${sized.fixtures_total} code changes: ${pre.n_good} real commits as their authors wrote them, and ` +
+    `${pre.n_bad} with one known problem (scope creep, an unused abstraction, duplicated code or a weakened test), ` +
+    `mostly real commits with the problem added on purpose. Jev flagged ${pct(pre.catch_rate)} of the problem ` +
+    `changes and ${flagged} of the ${pre.n_good} clean ones, in ${secs(jev.latency_ms.p95)} and ` +
+    `${usd(jev.cost_usd.per_call)} per change.`;
 
   const claude = sized.runners.filter((r) => !isJev(r.name)).map((r) => r.summary);
   const p95s = claude.map((s) => s.latency_ms.p95);
   const costs = claude.map((s) => s.cost_usd.per_call);
   const tiles = [
-    ["Catches", pct(pre.catch_rate), `of problem changes (${caught} of ${pre.n_bad})`],
-    ["Wrongly flags", pct(pre.false_reject_rate), `of good changes (${flagged} of ${pre.n_good})`],
+    ["Flags", pct(pre.catch_rate), `of problem changes (${caught} of ${pre.n_bad})`],
+    ["Wrongly flags", pct(pre.false_reject_rate), `of clean changes (${flagged} of ${pre.n_good})`],
     [
       "Per check",
       `${secs(jev.latency_ms.p95)} · ${usd(jev.cost_usd.per_call)}`,

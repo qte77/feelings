@@ -94,18 +94,33 @@ function answer(sized, pilot) {
 
 // ---- Layer 1 ---------------------------------------------------------------------------------
 
+// What a problem example of each kind looks like in the test set (see eval/fixtures.README.md).
+const EXAMPLES = {
+  scope_creep: "A change that also adds an unrelated helper, e.g. a slugify() function the message never mentions.",
+  single_use_abstraction: "A new config class that is created once and whose result nothing else uses.",
+  duplication: "A near-copy of a function added elsewhere in the same change, under a different name.",
+  weakened_tests: "An assertion loosened, e.g. assert status == 200 becomes assert status, or a test skipped.",
+};
+
 function ratings(sized) {
   const jev = sized.runners.find((r) => r.name === HEADLINE).summary.concerns;
   const rows = Object.entries(QUESTIONS)
-    .map(([key, label]) => ({ label, auc: jev[key].auc_pre }))
+    .map(([key, label]) => ({ key, label, auc: jev[key].auc_pre }))
     .sort((a, b) => b.auc - a.auc);
   document.getElementById("ratings").replaceChildren(
-    ...rows.map(({ label, auc }) => {
+    ...rows.map(({ key, label, auc }) => {
       const [, word, dots] = rating(auc);
       const li = el("li");
+      const details = el("details", undefined, "rating");
+      const summary = el("summary");
       const meter = el("span", "", `dots d${dots}`);
       meter.setAttribute("aria-hidden", "true");
-      li.append(el("span", label, "q"), meter, el("span", word, "word"), el("span", fmt(auc), "num"));
+      summary.append(el("span", label, "q"), meter, el("span", word, "word"), el("span", fmt(auc), "num"));
+      const body = el("div", undefined, "rating-body");
+      // The exact wording comes from eval/concerns.py via the export, the same text both runners send.
+      body.append(el("p", `“${sized.questions[key]}”`, "asked"), el("p", `Problem example: ${EXAMPLES[key]}`, "note"));
+      details.append(summary, body);
+      li.append(details);
       return li;
     }),
   );
@@ -373,4 +388,16 @@ drawWhenOpened(document.getElementById("full-chart"), () =>
 );
 openFromHash();
 window.addEventListener("hashchange", openFromHash);
+// site/version.txt says "dev" in git; the Pages workflow overwrites it with `git describe --tags` at deploy.
+fetch("version.txt")
+  .then((r) => (r.ok ? r.text() : ""))
+  .then((v) => {
+    const version = v.trim();
+    if (!version) return;
+    const link = document.getElementById("version");
+    link.textContent = version;
+    // An exact tag links to its release; "v0.3.0-2-gabc1234" links to the release list.
+    if (/^v\d+\.\d+\.\d+$/.test(version)) link.href = `https://github.com/qte77/feelings/releases/tag/${version}`;
+  })
+  .catch(() => {});
 document.body.dataset.ready = "true"; // lets the page check wait for rendering

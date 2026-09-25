@@ -16,6 +16,9 @@ on:
     paths:
       - "site/**"
       - ".github/workflows/gh-pages.yaml"
+  # A published release redeploys, so the page shows the new tag.
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -38,6 +41,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0  # tags, for git describe
+
+      # The page footer reads this: the latest tag, plus commits since it if any (e.g. v0.3.0-2-gabc1234).
+      - name: Write the version
+        run: git describe --tags --always > site/version.txt
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
 

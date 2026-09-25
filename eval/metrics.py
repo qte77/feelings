@@ -14,6 +14,8 @@ import statistics
 import sys
 from collections import Counter, defaultdict
 
+from concerns import CONCERNS
+
 REJECT_AT = 0.70
 CLEAR_BELOW = 0.50
 AGREE = 4  # of k=5 samples
@@ -181,7 +183,13 @@ def export(runs, fixtures_path, generated):
         result["summary"]["errors"] = error_summary([r for r in records if "error" in r])
         runners.append({"name": name, **result, "sweep": sweep(kept, scored)})
     return _nan_to_none(
-        {"generated": generated, "fixtures_total": len(fixtures), "fixtures_scored": len(scored), "runners": runners}
+        {
+            "generated": generated,
+            "questions": CONCERNS,
+            "fixtures_total": len(fixtures),
+            "fixtures_scored": len(scored),
+            "runners": runners,
+        }
     )
 
 

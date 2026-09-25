@@ -46,15 +46,17 @@
       <h1 id="question">Can Jev flag risky code changes before CI runs?</h1>
       <p class="lede"><a href="https://docs.typesafe.ai/">Jev</a> is TypeSafe's fast classification model.
         <span id="verdict">Loading the results…</span></p>
-      <p class="status"><span class="chip">Promising, not adopted yet</span> Next: a trial where Jev reports on each
-        change but never blocks it.</p>
+      <p class="status"><span class="chip">Passed our tests · not in use yet</span> Next: a trial in
+        <a href="https://github.com/qte77/analyze-stock-kpi">analyze-stock-kpi</a>, where Jev comments on each pull request
+        but never blocks it, compared with what human review finds.</p>
       <dl class="kpis" id="tiles"></dl>
     </section>
 
     <!-- Layer 1: per question -->
     <section id="questions" aria-labelledby="questions-h">
       <h2 id="questions-h">What it checks</h2>
-      <p class="note">How well Jev tells good changes from problem changes, per kind of problem (1.0 = perfect, 0.5 = guessing).</p>
+      <p class="note">Jev answers four yes/no questions about each change, seeing only the commit message and the diff.
+        The score is how well it tells good changes from problem changes (1.0 = perfect, 0.5 = guessing). Open a row for the exact question.</p>
       <ul class="ratings" id="ratings"></ul>
       <p class="note" id="baml-note"></p>
     </section>
@@ -152,8 +154,8 @@
   </main>
 
   <footer>
-    Data <span data-fill="generated">—</span> · Method and open questions: <a href="https://github.com/qte77/feelings/blob/main/docs/plans/2026-09-23-0001-jev-coding-gate-pilot.md">the pilot plan</a> ·
-    Charts: Chart.js v4.5.1 (<a href="vendor/CHARTJS_LICENSE">MIT</a>)
+    <a id="version" href="https://github.com/qte77/feelings/releases">dev</a> · Data <span data-fill="generated">—</span> ·
+    Method and open questions: <a href="https://github.com/qte77/feelings/blob/main/docs/plans/2026-09-23-0001-jev-coding-gate-pilot.md">the plan</a>
   </footer>
 </body>
 </html>

@@ -1,5 +1,11 @@
 {
  "generated": "2026-09-25",
+ "questions": {
+  "scope_creep": "Does this change add functionality beyond what its commit message describes?",
+  "single_use_abstraction": "Does this change add a class, interface, helper function, or config parameter that nothing else in the diff uses?",
+  "duplication": "Does this change duplicate logic that already appears elsewhere in the same diff?",
+  "weakened_tests": "Does this change weaken, skip, or delete tests or assertions?"
+ },
  "fixtures_total": 184,
  "fixtures_scored": 184,
  "runners": [

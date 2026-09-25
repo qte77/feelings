@@ -4,6 +4,7 @@ import statistics
 
 import pytest
 
+from concerns import CONCERNS as CONCERNS_ASKED
 from metrics import auc, export, post_decision, summarize, sweep, verdict
 
 CONCERNS = ["scope_creep", "single_use_abstraction", "duplication", "weakened_tests"]
@@ -148,6 +149,7 @@ def test_export_keeps_runner_order_with_summary_and_verdict(tmp_path):
     assert a_out["checks"]["duplication.auc_post"] is True
     assert a_out["go"] is False  # other concerns have one class only, so their AUC is NaN and fails
     assert [row["threshold"] for row in a_out["sweep"]][:2] == [0.5, 0.55]
+    assert out["questions"] == CONCERNS_ASKED  # the page shows the exact wording from one source
 
 
 def test_export_scores_every_runner_on_the_fixtures_all_of_them_answered(tmp_path):

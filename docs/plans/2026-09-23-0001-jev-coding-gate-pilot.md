@@ -111,6 +111,12 @@ Nothing is wired into a real workflow until question 1 is "go".
   horizontal page scroll. After a new eval run, re-export `site/data/results.json`
   (see Commands); the deploy runs on push to `main`.
 
+- **Page redesign (row 21, branch `feat/site-layers`):**
+  - Layered page: an answer up top and plain-language tiles and ratings, with the detail
+    behind three closed questions. Nothing was removed; the full tables and charts moved
+    into "How we tested it".
+  - Computed from the data: Jev is about 60× faster than the fastest Claude and about 40×
+    cheaper than the cheapest (Haiku).
 - **Release `v0.2.0` (2026-09-25):** the sized eval (#8), brand favicon (#9) and docs
   (#6, #7, #10) since `v0.1.0`. Notes are in the GitHub release.
 - **Release `v0.1.0` (2026-09-24):** the first tag on the fork. It covers #1–#5 and has no
@@ -347,7 +353,9 @@ Each becomes a row in the next arc if the result is "go".
 | Latency bar | p95 ≤ 3 s for one check, end to end. No latency figure is published by TypeSafe. |
 | Pass bars (`eval/metrics.py` `BARS`) | per-concern post AUC ≥ 0.80 · repeat agreement ≥ 95% · mean per-pair std ≤ 0.02 · pre-check false-reject on good fixtures ≤ 5% |
 | What a pass means | 60 fixtures is smoke-test scale. A pass means "worth a properly sized, calibrated eval", **not** "calibrated". The false-reject bar on 30 good fixtures is ≤ 1 fixture, so one unlucky sample flips it. Treat a one-fixture miss as "re-run / enlarge", not "no-go". |
-| Adopt Python or BAML | Python, unless BAML is clearly better on the comparison table. The adoption targets are Python, and BAML's Jev support is nightly-only. |
+| Adopt Python or BAML | **Both** (owner, 2026-09-23): keep both runners first-class. The page's headline numbers use Jev without BAML, since the two agree within 0.02 AUC. |
+| Page ratings (Layer 1) | From AUC on the first answer: ≥ 0.95 excellent (5 dots) · ≥ 0.85 good (4) · ≥ 0.80 fair (3, the pass bar) · below 0.80 weak (2). |
+| Page ratios (Layers 0 and 2) | Speed: per-request p95 of Jev without BAML against the range of the Claude models in the pilot. Cost: per check against **Claude Haiku 4.5, the cheapest Claude**, so the ratio isn't flattered. Both are computed from the data files and rounded to one significant figure. |
 
 ## Source map
 
@@ -355,8 +363,8 @@ Each becomes a row in the next arc if the result is "go".
 |---|---|
 | Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `error_summary`, `export`: several runs → strict JSON, NaN → null, every runner scored on the fixtures all runs answered, `fixtures_scored` next to `fixtures_total`, errors from each full run, plus a per-runner `sweep`; `sweep()`: false rejects and catch per threshold 0.50–0.90 on the first answer); tests `eval/test_metrics.py` |
 | Fixture builder | `eval/fixtures_build.py`: mutations `weaken_test` (top-level `==` with a truthy right side only), `add_unused_abstraction`, `add_duplication` (whole function, multi-line signatures), `add_scope_creep` (in-file / new file alternating); `_free` avoids names the diff already uses; `added_by`, `leaks`, `parses` guard every record; `select` serves the scarcest concern; `build`/`candidates` walk git. Tests `eval/test_fixtures_build.py`. Provenance and the good-label audit: `eval/fixtures.README.md` |
-| Page check (e2e) | `scripts/check_site.py`, run with polyfetch-scrape's patchright: light/dark × desktop/phone, fails on console/page errors, failed requests or horizontal scroll |
-| Results page | `site/index.html`, `site/app.js` (two sections, `render(id, url, questions)`: sized eval with KPI row, AUC dot plot, table and threshold sweep; the frozen pilot with its old-wording label), `site/style.css`, `site/data/results.json` (sized eval: both Jev runners on 184), `site/data/pilot-2026-09-24.json` (frozen 5-runner pilot on 60); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/favicon.svg` = `qte77/brand/images/logo-mark.paths.dejavu.svg` (byte-identical to analyze-stock-kpi's; linked relatively because the site lives under `/feelings/`), `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
+| Page check (e2e) | `scripts/check_site.py`, run with polyfetch-scrape's patchright: light/dark × desktop/phone. It asserts the verdict, 3 tiles and 4 ratings; every `<details>` closed on load; all charts drawn once opened; table row counts; the slider updating; deep links (`#strictness`, and nested `#compare-chart` opening its parent); no sideways scroll with everything open. It fails on console/page errors or failed requests. If patchright is updated, run `patchright install chromium` once |
+| Results page | `site/index.html`: Layer 0 answer (`#verdict`, `#tiles`), Layer 1 `#ratings`, and `<details>` `#compare` (nested `#compare-chart`), `#strictness`, `#method` (nested `#full-results`, `#full-chart`, `#pilot-results`, `#threshold-table`). `site/app.js`: `answer`, `ratings`, `compare`, `strictness`, `resultsTable`, `sweepTable`, `dotChart` via `drawWhenOpened` (Chart.js can't draw into a closed `<details>`), `openFromHash`; `RATINGS`/`HEADLINE`/`CURRENT_THRESHOLD` per "Decisions". CSS triangles for disclosure markers. Data: `site/style.css`, `site/data/results.json` (sized eval: both Jev runners on 184), `site/data/pilot-2026-09-24.json` (frozen 5-runner pilot on 60); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/favicon.svg` = `qte77/brand/images/logo-mark.paths.dejavu.svg` (byte-identical to analyze-stock-kpi's; linked relatively because the site lives under `/feelings/`), `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
 | Python runner | `eval/jev_gate.py` (`MODEL`, `INPUT_USD_PER_M` with its source, `check` → answers + usage, `cost_usd`, `run`, which writes `input_tokens`/`output_tokens`/`cost_usd` per record, records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
 | Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |
 | Claude baseline runner | `eval/claude_gate.py` (`SCHEMA`, `build_command`, `cli`, `check`, `run(workers=)`); tests `eval/test_claude_gate.py`; args `[k] [model] [workers]`, model defaults to `haiku` (current Haiku), any concrete id pins a version |

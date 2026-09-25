@@ -151,6 +151,10 @@ Nothing is wired into a real workflow until question 1 is "go".
     - Verified in a scratch clone: `baml check --agent-skill-check require` passes with
       only the `.claude/` copy.
     - A symlink doesn't help: `baml agent install` replaces it with a real folder.
+    - Both copies come from upstream (`206ddad`, BoundaryML, 2026-09-19), and
+      `upstream/main` still has both. So this is a deliberate difference from upstream.
+      If an upstream sync changes `.agents/skills/baml-core/SKILL.md`, git reports a
+      modify/delete conflict; resolve it by keeping the deletion.
   - `baml` refuses to run while that skill file (written for `0.20.1`) doesn't match the
     toolchain. Until `baml agent install` refreshes it (a separate chore commit), prefix
     commands with `BAML_AGENT_SKILL_CHECK=off`.
@@ -295,8 +299,12 @@ Each becomes a row in the next arc if the result is "go".
 - **`coding-harness-eval`** (`/workspaces/qte77/coding-harness-eval`,
   `github.com/qte77/coding-harness-eval`). It was renamed from `coding-agent-eval`: GitHub
   confirmed the new name via its API on 2026-09-23. The local folder, git remote and
-  Claude Code project data were renamed the same day; the in-repo rename is
-  qte77/coding-harness-eval#54.
+  Claude Code project data were renamed the same day. The in-repo rename merged on
+  2026-09-25 as qte77/coding-harness-eval#55. It superseded #54, whose commit was
+  unsigned because that clone has `commit.gpgsign=false` set locally.
+  - Rename references in other repos: ai-agents-research#484 and
+    cc-recursive-team-mode#19 are merged.
+  - The remaining rename work is row 17.
   - It grades task execution by agents (CC, Cline, opencode, Codebuff, Antigravity).
   - Only graders exist so far. Runners/collectors are still pending, so there are no
     adapters to reuse.
@@ -307,9 +315,11 @@ Each becomes a row in the next arc if the result is "go".
 
 | # | Item | Gate | Done when |
 |---|---|---|---|
-| 12 | Upstream contribution to `BoundaryML/feelings`: our fork's `main` is identical to upstream's, upstream has had no PRs yet, and its open issue #1 is "No LICENSE file". Candidate: a small BAML-only PR (standalone `code_gate.baml` shell tool + offline tests + README section, results summarised in the PR text) and/or an issue about the WAF 403s. `eval/` and `docs/plans` stay in the fork. | owner: deferred ("not now", 2026-09-23) | Owner decides the scope; then the PR is cut from upstream `main`, not from this branch |
+| 12 | Upstream contribution to `BoundaryML/feelings`. Our fork is ahead with #1–#6 and deliberately differs from upstream: #6 drops upstream's duplicate `.agents/skills/` copy, which should not go upstream. As of 2026-09-23, upstream had had no PRs, and its open issue #1 is "No LICENSE file". Candidate: a small BAML-only PR (standalone `code_gate.baml` shell tool + offline tests + README section, results summarised in the PR text) and/or an issue about the WAF 403s. `eval/` and `docs/plans` stay in the fork. | owner: deferred ("not now", 2026-09-23) | Owner decides the scope; then the PR is cut from upstream `main`, not from this branch |
 | 14 | CI for the fork: a `python` job (ruff + pytest on `eval/`, offline) and a `docs` job calling the reusable `qte77/.github/.github/workflows/lint-md-links.yml@main` (caller must grant `issues: write`). A `baml` job only once the nightly toolchain can be installed and pinned in CI. No shared Python test workflow exists in `qte77/.github`. | owner: approve adding CI (proposed 2026-09-24, unanswered) | Pre-staged as an open PR after running markdownlint + lychee locally on the upstream README and the plan; all jobs green on the PR |
 | 15 | Tell TypeSafe about the 2026-09-23 WAF 403s at `github.com/typesafe-ai/typesafe-sdk-python/issues` (public, issues on, no existing 403/Cloudflare issue as of 2026-09-24). The block stopped by 2026-09-24 (0 errors in 300 requests), so it can't be bisected; only an informational issue with Ray ID `a3fb98092e48d4ca` (no IP) is left. | owner: default **don't file** (not reproducible) | Owner either confirms "don't file" (strike the row) or approves a draft, which is posted only after approval |
+| 16 | Jev fit across the owner's 21 repos: a survey by subagents on 2026-09-23, recorded here so it isn't lost. Recommended order: (1) generalise `feelings/eval` into a shared judge harness (questions, labelled fixtures, metrics, swappable provider); (2) move the shared Actions `gha-issue-triage` and `gha-rxiv-paper-eval` from hand-parsed LLM text to a fixed JSON output, then Jev as a provider; (3) vertical pilots on public text (CorinItemPhotoSales sold-listings filter, then ldnmxx fallback routing); (4) build-behind-gate for coding-harness-eval's solution grader. No-go, on purpose: pseudonymize-text (PII), m365dsc control checks (tenant data), claude-azure-workflows-gui production (EU in-tenant), doc-pipeline-engine (Jev rejected, issue #196), a2ui-agui-kit guard, vlm-toolkit triage (free today). The findings came from subagent reads and haven't been re-verified here. | owner: start as its own arc, or not (default: not until row 10 answers go/no-go) | Owner decides; if started, a new plan file `docs/plans/YYYY-MM-DD-NNNN-jev-estate-rollout.md` takes this row over |
+| 17 | Finish the `coding-agent-eval` → `coding-harness-eval` rename references in 4 repos. Three are on other branches with the owner's unpushed work: `.github-private-project-tracker` (`repos.txt`, the one that matters), `ldnmxx` (plus 4 untracked files) and `qte77.github.io`. `2026-06-job-research` has no GitHub remote. | owner: land or park those branches first; for the local-only repo, say whether a local commit is wanted | Each repo updated through a signed, squash-merged PR (or a local commit for the local-only repo), or explicitly dropped |
 | 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); token usage for the BAML runner, if `CheckDiff` can expose it cheaply | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; reject threshold tuned (catch is 0.68 at the untuned 0.70 despite AUC 0.93–0.98) |
 | 8 | Claude repeat run (k=5) for agreement/spread, plus Claude end-to-end timing for one check (10 CLI calls per model, start-up included, same method as Jev; ≈ 30 calls), so every runner is timed the same way. Light k=1 run shipped, results in Status. | owner OKs session usage (≈ 930 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows and end-to-end p50/p95 added to the Status table and the results page |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |

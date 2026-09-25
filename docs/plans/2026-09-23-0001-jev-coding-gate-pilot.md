@@ -5,7 +5,7 @@
 ### Start here (handoff, 2026-09-25)
 
 - **State:** `main` is clean.
-  - #1–#12 are merged on the fork `qte77/feelings`; release `v0.3.0`.
+  - #1–#16 are merged on the fork `qte77/feelings`; release `v0.4.0`.
   - The page is layered (#12): details sit behind `#compare`, `#strictness` and `#method`.
   - Results live at https://qte77.github.io/feelings/.
   - Local run files (`eval/run-*.jsonl`) are gitignored; the page data is committed.
@@ -143,6 +143,7 @@ Nothing is wired into a real workflow until question 1 is "go".
   - The Chart.js mention is removed; its licence file still ships.
   - Each rating opens to its exact question, which the export now carries from `concerns.py`.
   - The status line is clearer.
+- **Release `v0.4.0` (2026-09-25):** Claude on the same 184 changes (#16), the version in the footer, exact questions per rating (#14), and the upstream drafts (#15).
 - **Release `v0.3.0` (2026-09-25):** the layered results page (#12).
 - **Page redesign (row 21, qte77/feelings#12, squash-merged as `76ad87e`, live and checked):**
   - Layered page: an answer up top and plain-language tiles and ratings, with the detail

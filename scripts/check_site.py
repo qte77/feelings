@@ -58,7 +58,8 @@ with sync_playwright() as p:
             ratings = page.locator("#ratings li").count()
             opened = page.locator("details[open]").count()
             expect(
-                "real commits as their authors wrote them" in verdict,
+                "real commits as their authors wrote them" in verdict
+                and "yes/no, choice or score" in page.locator(".lede").inner_text(),
                 f"{where}: no verdict",
             )
             expect(tiles == 3, f"{where}: {tiles} tiles")
@@ -124,6 +125,7 @@ with sync_playwright() as p:
     # A fresh page per link: a second link on the same page only changes the hash.
     for anchor, wanted in (
         ("strictness", ["strictness"]),
+        ("alternatives", ["alternatives"]),
         ("compare-chart", ["compare", "compare-chart"]),
     ):
         page = browser.new_page()

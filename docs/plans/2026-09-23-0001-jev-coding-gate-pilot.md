@@ -88,7 +88,8 @@ Nothing is wired into a real workflow until question 1 is "go".
   version file or changelog (none exist upstream either); the notes are in the GitHub
   release.
 
-- **Row 10, sized eval (2026-09-25, branch `feat/sized-eval`): both Jev runners pass every
+- **Row 10, sized eval (2026-09-25, qte77/feelings#8, squash-merged as `de9b4ec`; the page's
+  favicon followed in #9): both Jev runners pass every
   bar on 184 fixtures** (59 good; bad 30 / 37 / 30 / 32 for weakened tests / unused
   abstraction / duplication / scope creep). Runs: k=5, 0 errors.
   - AUC, first answer, without BAML / with BAML:

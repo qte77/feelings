@@ -32,6 +32,10 @@ unchanged, so Jev must judge the code, not read the label.
 which leaves no trace in a diff, so they were unjudgeable (every model scored 0.56–0.84 AUC
 on them). Each now shows the weakening: `- assert A == B` / `+ assert A`, with the hunk's old
 count bumped. bad-08 (`@pytest.mark.skip`) was already visible.
+**single_use_abstraction shape** (checked 2026-09-25, all 8): a new private class
+instantiated exactly once on a module-level line of its own new file, whose result nothing
+else in the diff uses. That fits both the old question ("used only once") and the
+reworded one ("nothing else in the diff uses"); new fixtures keep this shape.
 **Limits**: "good" labels are manual spot-review, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

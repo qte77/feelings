@@ -3,7 +3,7 @@ import { onThemePalette } from "./chart-theme.js";
 
 const QUESTIONS = {
   scope_creep: "Scope creep",
-  single_use_abstraction: "Abstraction used once",
+  single_use_abstraction: "Unused abstraction",
   duplication: "Duplication",
   weakened_tests: "Weakened tests",
 };

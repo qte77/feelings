@@ -12,7 +12,7 @@ class Concerns {
         "Does this change add functionality beyond what its commit message describes?",
     ),
     single_use_abstraction: float @description(
-        "Does this change introduce an abstraction (class, interface, helper function, or config parameter) that is used only once?",
+        "Does this change add a class, interface, helper function, or config parameter that nothing else in the diff uses?",
     ),
     duplication: float @description(
         "Does this change duplicate logic that already appears elsewhere in the same diff?",

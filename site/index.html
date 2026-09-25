@@ -44,7 +44,8 @@
     <!-- Layer 0: the answer -->
     <section id="answer" aria-labelledby="question">
       <h1 id="question">Can Jev flag risky code changes before CI runs?</h1>
-      <p class="lede"><a href="https://docs.typesafe.ai/">Jev</a> is TypeSafe's fast yes/no classifier.
+      <p class="lede"><a href="https://docs.typesafe.ai/">Jev</a> is TypeSafe's fast decision model: it answers typed
+        questions (yes/no, choice or score) with a probability. Here it answers four yes/no questions about each change.
         <span id="verdict">Loading the results…</span></p>
       <p class="status"><span class="chip">Passed our tests · not in use yet</span> Next: a trial in
         <a href="https://github.com/qte77/analyze-stock-kpi">analyze-stock-kpi</a>, where Jev comments on each pull request
@@ -56,7 +57,8 @@
     <section id="questions" aria-labelledby="questions-h">
       <h2 id="questions-h">What it checks</h2>
       <p class="note">Jev answers four yes/no questions about each change, seeing only the commit message and the diff.
-        The score is how well it tells good changes from problem changes (1.0 = perfect, 0.5 = guessing). Open a row for the exact question.</p>
+        The score is how well it tells clean changes from problem changes: ROC-AUC, the chance that a random problem change
+        scores higher than a random clean one (1.0 = perfect, 0.5 = guessing). Open a row for the exact question.</p>
       <ul class="ratings" id="ratings"></ul>
       <p class="note" id="baml-note"></p>
     </section>
@@ -77,6 +79,37 @@
           <p class="note">Each dot is one setup's score for one kind of problem. The axis starts at <span data-fill="axis-min">0.85</span>.</p>
           <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev with and without BAML and three Claude models; the numbers are in the full results under How we tested it."></canvas></div>
         </details>
+      </div>
+    </details>
+
+    <details id="alternatives" class="layer">
+      <summary><h2>Why Jev, and what else is there?</h2></summary>
+      <div class="layer-body">
+        <h3>For this job, measured here</h3>
+        <ul>
+          <li><strong>Pro:</strong> tells clean from problem changes nearly as well as Claude Sonnet and Opus and better than
+            Haiku (0.94 against 0.96, 0.97 and 0.90 on average), in about a third of a second and for about a hundredth of a
+            cent. Cheap and fast enough to check every change.</li>
+          <li><strong>Pro:</strong> no GPU or model hosting; one HTTPS call, from Python or BAML with the same results.</li>
+          <li><strong>Con:</strong> the diff leaves your machine for a hosted, paid service, so it doesn't fit code that must stay private.</li>
+          <li><strong>Con:</strong> on 2026-09-23 TypeSafe's firewall blocked 4 of the then 60 changes (none since); a check
+            must treat "blocked" as its own outcome.</li>
+        </ul>
+        <h3>Others building on Jev (their claims, not measured here)</h3>
+        <ul>
+          <li><a href="https://github.com/coldteadotai/abide">abide</a> (MIT) makes Claude Code, Codex and OpenCode follow a
+            repo's AGENTS.md rules: it asks Jev one question per rule on every edit and has the agent repair a break. The same
+            idea as this test, packaged for everyday use.</li>
+          <li><a href="https://github.com/browser-use/jev-ultrafast">jev-ultrafast</a> (MIT, Browser Use) is a web agent whose
+            every step is a Jev decision.</li>
+        </ul>
+        <h3>An open alternative (not measured here yet)</h3>
+        <ul>
+          <li><a href="https://github.com/NandhaKishorM/laya">Laya</a> (Apache-2.0) is an open-weight decision model with the same
+            typed questions, run locally or self-hosted behind a Jev-compatible API. It could remove both cons above (data stays
+            local, no per-call bill), but its accuracy on this task is unknown. Its own README says its Jev comparison was never
+            measured against the live Jev API. Next step here: run it on the same <span data-fill="fixtures">184</span> changes.</li>
+        </ul>
       </div>
     </details>
 
@@ -123,6 +156,14 @@
             Claude's cost is what its CLI reports at list price.</dd>
           <dt>Firewall</dt>
           <dd>TypeSafe's firewall blocked 4 changes on 2026-09-23 and none since. Setups are always scored on the changes all of them answered.</dd>
+          <dt>Why ROC-AUC</dt>
+          <dd>It doesn't depend on a threshold. Jev returns probabilities while Claude states a number when asked, so ranking
+            quality compares them fairly. What happens at the actual setting is covered by "flags" and "wrongly flags" and the
+            strictness slider. It doesn't show calibration or rare-class precision; those metrics are planned.</dd>
+          <dt>Lesson</dt>
+          <dd>Ask about what is in the input. "Is this abstraction used only once?" needs the whole codebase, which Jev never
+            sees; "…that nothing else in the diff uses?" took wrongly flagged clean changes from 6.7% to 0% on the same
+            60-change set.</dd>
           <dt>Caveats</dt>
           <dd>Problems are mostly synthetic. Good labels come from rules plus one audit, not a manual review.</dd>
         </dl>

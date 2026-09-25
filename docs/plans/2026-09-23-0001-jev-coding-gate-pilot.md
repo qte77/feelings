@@ -315,6 +315,9 @@ uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl \
 # Don't export Claude's 60-fixture runs alongside: export() keeps only fixtures every run answered.
 python3 -m http.server 8137 --directory site   # preview at http://localhost:8137/
 uv run --directory ../polyfetch-scrape python ../feelings/scripts/check_site.py <out_dir> [url]  # e2e page check
+# release: tag the merge commit (full sha), then redeploy from main so the footer shows the tag
+gh release create vX.Y.Z -R qte77/feelings --target <full-sha> --notes-file notes.md
+gh workflow run gh-pages.yaml -R qte77/feelings --ref main   # the Pages env only allows main
 ```
 
 ### Arc-start access checklist (owner, once)

@@ -16,9 +16,9 @@ on:
     paths:
       - "site/**"
       - ".github/workflows/gh-pages.yaml"
-  # A published release redeploys, so the page shows the new tag.
-  release:
-    types: [published]
+  # After `gh release create`, redeploy with `gh workflow run gh-pages.yaml --ref main` so the
+  # footer shows the new tag. (A `release` trigger can't deploy here: the github-pages
+  # environment only allows the `main` branch, and a release runs from the tag.)
   workflow_dispatch:
 
 permissions:

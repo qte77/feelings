@@ -5,7 +5,8 @@
 ### Start here (handoff, 2026-09-25)
 
 - **State:** `main` is clean.
-  - #1–#10 are merged on the fork `qte77/feelings`; release `v0.2.0`.
+  - #1–#12 are merged on the fork `qte77/feelings`; release `v0.3.0`.
+  - The page is layered (#12): details sit behind `#compare`, `#strictness` and `#method`.
   - Results live at https://qte77.github.io/feelings/.
   - Local run files (`eval/run-*.jsonl`) are gitignored; the page data is committed.
 - **Where the answers are:**
@@ -111,7 +112,8 @@ Nothing is wired into a real workflow until question 1 is "go".
   horizontal page scroll. After a new eval run, re-export `site/data/results.json`
   (see Commands); the deploy runs on push to `main`.
 
-- **Page redesign (row 21, branch `feat/site-layers`):**
+- **Release `v0.3.0` (2026-09-25):** the layered results page (#12).
+- **Page redesign (row 21, qte77/feelings#12, squash-merged as `76ad87e`, live and checked):**
   - Layered page: an answer up top and plain-language tiles and ratings, with the detail
     behind three closed questions. Nothing was removed; the full tables and charts moved
     into "How we tested it".

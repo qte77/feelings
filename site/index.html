@@ -19,8 +19,8 @@
       }
     })();
   </script>
-  <title>Jev coding-gate results</title>
-  <meta name="description" content="Can Jev act as a fast check on code changes? Accuracy, speed and blocked requests for Jev (with and without BAML) against Claude Haiku, Sonnet and Opus on 60 labelled code changes.">
+  <title>Jev code-change check</title>
+  <meta name="description" content="Can Jev, TypeSafe's fast classification model, flag risky code changes before CI runs? Results on 184 labelled changes, compared with Claude.">
   <!-- Same mark as analyze-stock-kpi: qte77/brand/images/logo-mark.paths.dejavu.svg, copied in (relative: served under /feelings/) -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="eyerest.css">
@@ -32,7 +32,7 @@
 </head>
 <body>
   <header class="bar">
-    <h1>Jev coding-gate results</h1>
+    <span class="brand">qte77 · feelings</span>
     <button id="theme-toggle" type="button" aria-label="Color theme: System (click to change)" title="Color theme: System (click to change)">
       <span class="theme-glyph" aria-hidden="true">◐</span>
       <span class="theme-label">System</span>
@@ -41,66 +41,119 @@
   </header>
 
   <main>
-    <p class="lede">
-      Can <a href="https://docs.typesafe.ai/">Jev</a> act as a fast check on a code change, before the slow checks
-      (tests, lint, CI) run? Each runner answers four questions about a change as probabilities.
-      Jev is called with and without <a href="https://github.com/BoundaryML/baml">BAML</a>; Claude runs through the
-      <code>claude</code> CLI as the baseline in the earlier pilot below.
-    </p>
-
-    <section id="sized" aria-labelledby="sized-h">
-      <h2 id="sized-h">Sized eval: Jev on <span data-fill="fixtures">184</span> labelled changes</h2>
-      <p class="note">Changes from four public repos (analyze-stock-kpi, polyfetch-scrape, doc-pipeline-engine, Agents-eval):
-        59 good and 30–37 bad per question. Most bad ones are mutations of a real commit; two are real commits
-        that turned out to add an unused abstraction. Five answers per change.
-        Data generated <span data-fill="generated">—</span>.</p>
-      <h3>Jev, without BAML</h3>
-      <dl class="kpis"></dl>
-
-      <div class="card">
-        <h3>How well each runner separates good from bad changes</h3>
-        <p class="note">AUC per question on the first answer: 1.0 ranks every bad change above every good one, 0.5 is guessing.
-          The axis starts at <span data-fill="axis-min">0.85</span>.</p>
-        <div class="chart"><canvas role="img" aria-label="Dot plot of AUC per question for each Jev runner; the same numbers are in the table below."></canvas></div>
-      </div>
-
-      <h3>All numbers</h3>
-      <div class="scroll"><table class="results"><caption class="sr-only">Sized eval results per runner</caption></table></div>
-
-      <h3>Where to set the fast check</h3>
-      <p class="note">Blocking a change when any question scores at or above the threshold, on the first answer. The pass bar
-        for wrongly blocked good changes is 5%; the gate currently uses 0.70.</p>
-      <div class="scroll"><table class="sweep"><caption class="sr-only">Wrongly blocked and caught per threshold</caption></table></div>
+    <!-- Layer 0: the answer -->
+    <section id="answer" aria-labelledby="question">
+      <h1 id="question">Can Jev flag risky code changes before CI runs?</h1>
+      <p class="lede"><a href="https://docs.typesafe.ai/">Jev</a> is TypeSafe's fast classification model.
+        <span id="verdict">Loading the results…</span></p>
+      <p class="status"><span class="chip">Promising, not adopted yet</span> Next: a trial where Jev reports on each
+        change but never blocks it.</p>
+      <dl class="kpis" id="tiles"></dl>
     </section>
 
-    <section id="pilot" aria-labelledby="pilot-h">
-      <h2 id="pilot-h">Pilot, 2026-09-24: Jev against Claude on 60 changes</h2>
-      <p class="note">The earlier, smaller comparison, frozen as it was: <span data-fill="fixtures">60</span> changes from
-        analyze-stock-kpi, Jev at five answers and Claude at one, all scored on the same <span data-fill="scored">60</span>.
-        It used the <strong>old wording</strong> of the abstraction question ("used only once"), so that column isn't
-        comparable with the sized eval above.</p>
-      <div class="card">
-        <h3>How well each runner separates good from bad changes</h3>
-        <p class="note">The axis starts at <span data-fill="axis-min">0.85</span>.</p>
-        <div class="chart"><canvas role="img" aria-label="Dot plot of AUC per question for Jev and three Claude models; the same numbers are in the table below."></canvas></div>
-      </div>
-      <div class="scroll"><table class="results"><caption class="sr-only">Pilot results per runner</caption></table></div>
+    <!-- Layer 1: per question -->
+    <section id="questions" aria-labelledby="questions-h">
+      <h2 id="questions-h">What it checks</h2>
+      <p class="note">How well Jev tells good changes from problem changes, per kind of problem (1.0 = perfect, 0.5 = guessing).</p>
+      <ul class="ratings" id="ratings"></ul>
+      <p class="note" id="baml-note"></p>
     </section>
 
-    <noscript><p>The tables need JavaScript. The raw numbers are in <a href="data/results.json">data/results.json</a>
+    <!-- Layers 2-4: opened on purpose -->
+    <details id="compare" class="layer">
+      <summary><h2>How does it compare with Claude?</h2></summary>
+      <div class="layer-body">
+        <p class="caveat"><strong>Earlier, smaller test:</strong> <span data-fill="pilot-total">60</span> changes, and the
+          old wording of the unused-abstraction question. Claude hasn't been run on the full <span data-fill="fixtures">184</span> yet.</p>
+        <div class="scroll"><table class="compare" id="compare-table">
+          <caption class="sr-only">Jev and three Claude models on the earlier test</caption>
+        </table></div>
+        <p id="compare-summary"></p>
+        <details class="sub" id="compare-chart">
+          <summary>Per-question chart</summary>
+          <p class="note">Each dot is one setup's score for one kind of problem. The axis starts at <span data-fill="axis-min">0.85</span>.</p>
+          <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev and three Claude models on the earlier test; the numbers are in the full table under How we tested it."></canvas></div>
+        </details>
+      </div>
+    </details>
+
+    <details id="strictness" class="layer">
+      <summary><h2>How strict should the check be?</h2></summary>
+      <div class="layer-body">
+        <p>Jev scores each kind of problem from 0 to 1. The check flags a change when any score reaches the setting below.</p>
+        <label class="slider" for="threshold">
+          <span>lenient</span>
+          <input id="threshold" type="range" min="0.5" max="0.9" step="0.05" value="0.7" aria-describedby="threshold-out">
+          <span>strict</span>
+        </label>
+        <p class="setting">Setting: <output id="threshold-out" for="threshold">0.70</output> <span id="threshold-current"></span></p>
+        <div class="meter">
+          <span class="meter-label">Catches</span>
+          <span class="meter-track"><span class="meter-fill" id="catch-bar"></span></span>
+          <span class="meter-value" id="catch-value"></span>
+        </div>
+        <div class="meter">
+          <span class="meter-label">Wrongly flags</span>
+          <span class="meter-track"><span class="meter-fill warn" id="frr-bar"></span><span class="meter-limit" title="5% limit"></span></span>
+          <span class="meter-value" id="frr-value"></span>
+        </div>
+        <p class="note" id="threshold-note"></p>
+      </div>
+    </details>
+
+    <details id="method" class="layer">
+      <summary><h2>How we tested it</h2></summary>
+      <div class="layer-body">
+        <dl class="facts">
+          <dt>Examples</dt>
+          <dd><span data-fill="fixtures">184</span> real commits from four public repos: analyze-stock-kpi, polyfetch-scrape,
+            doc-pipeline-engine and Agents-eval.</dd>
+          <dt>Labels</dt>
+          <dd><span data-fill="n-good">59</span> good and <span data-fill="n-bad">125</span> with a problem (30–37 per kind). Most
+            problem examples are a real commit with one problem added; two are real commits that already had one.</dd>
+          <dt>Asked</dt>
+          <dd>Five times per change; the answers agree <span data-fill="agreement">97–100%</span> of the time. Jev is called with
+            and without <a href="https://github.com/BoundaryML/baml">BAML</a>.</dd>
+          <dt>Speed and cost</dt>
+          <dd>Per request as logged. End to end, including start-up, one check took p95 3.15 s without BAML and 2.94 s with it
+            (10 runs each, 2026-09-23). Cost counts input tokens × $0.042 per million (typesafe.ai); no output price is published.
+            Claude's cost is what its CLI reports at list price.</dd>
+          <dt>Firewall</dt>
+          <dd>TypeSafe's firewall blocked 4 changes on 2026-09-23 and none since. Setups are always scored on the changes all of them answered.</dd>
+          <dt>Caveats</dt>
+          <dd>Problems are mostly synthetic. Good labels come from rules plus one audit, not a manual review.</dd>
+        </dl>
+
+        <details class="sub" id="full-results">
+          <summary>Full results, both setups</summary>
+          <p class="note">"Meets the bar" counts the pass bars met: separation, repeat agreement, false flags and speed.</p>
+          <div class="scroll"><table class="results" id="sized-table"><caption class="sr-only">Results on all changes</caption></table></div>
+        </details>
+        <details class="sub" id="full-chart">
+          <summary>Per-question chart, both setups</summary>
+          <p class="note">The axis starts at <span data-fill="axis-min">0.85</span>.</p>
+          <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev with and without BAML; the numbers are in the full results table."></canvas></div>
+        </details>
+        <details class="sub" id="pilot-results">
+          <summary>Earlier test, full table (Jev and Claude)</summary>
+          <div class="scroll"><table class="results" id="pilot-table"><caption class="sr-only">Earlier test results</caption></table></div>
+        </details>
+        <details class="sub" id="threshold-table">
+          <summary>Every strictness setting, both setups</summary>
+          <div class="scroll"><table class="sweep" id="sweep-table"><caption class="sr-only">Catches and wrongly flags per setting</caption></table></div>
+        </details>
+        <p>Raw data: <a href="data/results.json">results.json</a> · <a href="data/pilot-2026-09-24.json">pilot-2026-09-24.json</a> ·
+          <a href="https://github.com/qte77/feelings/blob/main/eval/fixtures.jsonl">the labelled examples</a>.</p>
+      </div>
+    </details>
+
+    <noscript><p>This page needs JavaScript for its numbers. The raw data is in <a href="data/results.json">data/results.json</a>
       and <a href="data/pilot-2026-09-24.json">data/pilot-2026-09-24.json</a>.</p></noscript>
-    <ul class="notes">
-      <li><strong>Wrongly blocked</strong>: share of good changes the fast first check would reject. <strong>Caught</strong>: share of bad changes it rejects.</li>
-      <li><strong>Blocked by firewall</strong>: on 2026-09-23 TypeSafe's Cloudflare firewall answered 4 changes with HTTP 403 on every try; from 2026-09-24 the same changes went through. Runners are always scored on the changes all of them answered.</li>
-      <li><strong>Cost per check</strong>: Claude's is what the CLI reports at list price. Jev's is measured input tokens × $0.042 per million (typesafe.ai); TypeSafe publishes no output price, so it covers input only. The BAML runner doesn't log usage.</li>
-      <li><strong>Per-request time</strong> is not logged by the BAML runner. End-to-end, one check took p50 0.90 s / p95 3.15 s without BAML and 0.86 s / 2.94 s with it (10 runs each, 2026-09-23). Claude hasn't been timed the same way yet.</li>
-      <li><strong>Bars passed</strong> counts the pass bars (AUC, repeat agreement, false rejects, speed). Claude runs once per change, so its agreement bars aren't measured.</li>
-    </ul>
   </main>
 
   <footer>
-    Method, pass bars and caveats: <a href="https://github.com/qte77/feelings/blob/main/docs/plans/2026-09-23-0001-jev-coding-gate-pilot.md">the pilot plan</a>.
-    Charts: Chart.js v4.5.1 (<a href="vendor/CHARTJS_LICENSE">MIT</a>).
+    Data <span data-fill="generated">—</span> · Method and open questions: <a href="https://github.com/qte77/feelings/blob/main/docs/plans/2026-09-23-0001-jev-coding-gate-pilot.md">the pilot plan</a> ·
+    Charts: Chart.js v4.5.1 (<a href="vendor/CHARTJS_LICENSE">MIT</a>)
   </footer>
 </body>
 </html>

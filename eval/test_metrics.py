@@ -4,7 +4,7 @@ import statistics
 
 import pytest
 
-from metrics import auc, export, post_decision, summarize, verdict
+from metrics import auc, export, post_decision, summarize, sweep, verdict
 
 CONCERNS = ["scope_creep", "single_use_abstraction", "duplication", "weakened_tests"]
 
@@ -138,6 +138,7 @@ def test_export_keeps_runner_order_with_summary_and_verdict(tmp_path):
     assert a_out["summary"]["concerns"]["duplication"]["auc_pre"] == 1.0
     assert a_out["checks"]["duplication.auc_post"] is True
     assert a_out["go"] is False  # other concerns have one class only, so their AUC is NaN and fails
+    assert [row["threshold"] for row in a_out["sweep"]][:2] == [0.5, 0.55]
 
 
 def test_export_scores_every_runner_on_the_fixtures_all_of_them_answered(tmp_path):
@@ -173,6 +174,28 @@ def test_export_fails_loudly_on_records_for_unknown_fixtures(tmp_path):
     run = write_jsonl(tmp_path / "run.jsonl", records("good", [{}]) + records("typo", [{}]))
     with pytest.raises(KeyError, match="typo"):
         export([("A", run)], fixtures, generated="2026-09-24")
+
+
+def test_sweep_reports_false_rejects_and_catch_per_threshold_on_the_first_answer():
+    fixtures = [fixture("g1"), fixture("g2"), fixture("b1", "duplication"), fixture("b2", "duplication")]
+    recs = (
+        records("g1", [{"duplication": 0.55}, {"duplication": 0.99}])  # later repeats must not count
+        + records("g2", [{}])
+        + records("b1", [{"duplication": 0.65}])
+        + records("b2", [{"duplication": 0.9}])
+    )
+    rows = sweep(recs, fixtures, thresholds=(0.5, 0.6, 0.7))
+    assert rows == [
+        {"threshold": 0.5, "false_reject_rate": 0.5, "catch_rate": 1.0},
+        {"threshold": 0.6, "false_reject_rate": 0.0, "catch_rate": 1.0},
+        {"threshold": 0.7, "false_reject_rate": 0.0, "catch_rate": 0.5},
+    ]
+
+
+def test_sweep_leaves_errored_fixtures_out():
+    fixtures = [fixture("g1"), fixture("b1", "duplication"), fixture("blocked")]
+    recs = records("g1", [{}]) + records("b1", [{"duplication": 0.9}]) + [{"id": "blocked", "sample": 0, "error": "X"}]
+    assert sweep(recs, fixtures, thresholds=(0.7,)) == [{"threshold": 0.7, "false_reject_rate": 0.0, "catch_rate": 1.0}]
 
 
 def test_records_for_unknown_fixture_fail_loudly():

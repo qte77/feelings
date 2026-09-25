@@ -118,6 +118,28 @@ def verdict(summary):
     return checks
 
 
+SWEEP = tuple(round(0.5 + 0.05 * i, 2) for i in range(9))  # 0.50 .. 0.90
+
+
+def sweep(records, fixtures, thresholds=SWEEP):
+    """Fast-check trade-off per reject threshold: block if any concern >= t, on the first answer."""
+    expect = {f["id"]: f["expect"] for f in fixtures}
+    first = {r["id"]: r["concerns"] for r in records if r["sample"] == 0 and "error" not in r}
+    good = [fid for fid in first if not any(expect[fid].values())]
+    bad = [fid for fid in first if any(expect[fid].values())]
+    rows = []
+    for t in thresholds:
+        rejected = {fid: any(v >= t for v in first[fid].values()) for fid in first}
+        rows.append(
+            {
+                "threshold": t,
+                "false_reject_rate": statistics.fmean(rejected[f] for f in good) if good else math.nan,
+                "catch_rate": statistics.fmean(rejected[f] for f in bad) if bad else math.nan,
+            }
+        )
+    return rows
+
+
 def score(records, fixtures):
     summary = summarize(records, fixtures)
     checks = verdict(summary)
@@ -152,9 +174,10 @@ def export(runs, fixtures_path, generated):
     scored = [f for f in fixtures if f["id"] in common]
     runners = []
     for name, records in loaded:
-        result = score([r for r in records if r["id"] in common], scored)
+        kept = [r for r in records if r["id"] in common]
+        result = score(kept, scored)
         result["summary"]["errors"] = error_summary([r for r in records if "error" in r])
-        runners.append({"name": name, **result})
+        runners.append({"name": name, **result, "sweep": sweep(kept, scored)})
     return _nan_to_none(
         {"generated": generated, "fixtures_total": len(fixtures), "fixtures_scored": len(scored), "runners": runners}
     )

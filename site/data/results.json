@@ -38,7 +38,9 @@
     },
     "pre": {
      "false_reject_rate": 0.01694915254237288,
-     "catch_rate": 0.784
+     "catch_rate": 0.784,
+     "n_good": 59,
+     "n_bad": 125
     },
     "zero_std_share": 0.09646739130434782,
     "latency_ms": {
@@ -155,7 +157,9 @@
     },
     "pre": {
      "false_reject_rate": 0.01694915254237288,
-     "catch_rate": 0.792
+     "catch_rate": 0.792,
+     "n_good": 59,
+     "n_bad": 125
     },
     "zero_std_share": 0.07744565217391304,
     "latency_ms": null,

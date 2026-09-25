@@ -99,6 +99,15 @@ def test_cost_is_summed_when_runners_report_it():
     assert summarize(records("good", [{}]), fixtures)["cost_usd"] is None
 
 
+def test_summary_counts_good_and_bad_fixtures_so_rates_convert_back_to_counts():
+    fixtures = [fixture("g1"), fixture("g2"), fixture("g3"), fixture("b1", "duplication")]
+    recs = records("g1", [{"duplication": 0.9}]) + records("g2", [{}]) + records("g3", [{}])
+    recs += records("b1", [{"duplication": 0.9}])
+    pre = summarize(recs, fixtures)["pre"]
+    assert (pre["n_good"], pre["n_bad"]) == (3, 1)
+    assert pre["false_reject_rate"] * pre["n_good"] == pytest.approx(1)  # "1 of 3" on the page
+
+
 def test_errored_records_are_counted_and_left_out_of_scoring():
     fixtures = [fixture("good"), fixture("bad", "duplication"), fixture("blocked")]
     recs = (

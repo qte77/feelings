@@ -88,6 +88,8 @@ def summarize(records, fixtures):
         "pre": {
             "false_reject_rate": statistics.fmean(rejected[f] for f in good) if good else math.nan,
             "catch_rate": statistics.fmean(rejected[f] for f in bad) if bad else math.nan,
+            "n_good": len(good),
+            "n_bad": len(bad),
         },
         # Reason: exact repeats across samples may mean a server-side cache, not consistency.
         "zero_std_share": statistics.fmean(s == 0.0 for s in pair_stds) if repeated else None,

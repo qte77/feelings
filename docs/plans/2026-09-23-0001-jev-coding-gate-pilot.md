@@ -88,6 +88,51 @@ Nothing is wired into a real workflow until question 1 is "go".
   version file or changelog (none exist upstream either); the notes are in the GitHub
   release.
 
+- **Row 10, sized eval (2026-09-25, branch `feat/sized-eval`): both Jev runners pass every
+  bar on 184 fixtures** (59 good; bad 30 / 37 / 30 / 32 for weakened tests / unused
+  abstraction / duplication / scope creep). Runs: k=5, 0 errors.
+  - AUC, first answer, without BAML / with BAML:
+    - Scope creep: 0.906 / 0.906.
+    - Unused abstraction: 0.894 / 0.911.
+    - Duplication: 0.982 / 0.983.
+    - Weakened tests: 0.987 / 0.990.
+  - Agreement: 0.967–0.995. Good changes wrongly blocked: 1.7% on both (1 of 59, good-51).
+    Caught: 78% / 79%.
+  - Scope creep and unused abstraction score lower than on the original 60 (0.99 / 0.93).
+    The new repos are harder, doc-pipeline-engine most of all (0.81–0.84 on its 28).
+  - Cost: median 2,711 input tokens per check, $0.107 for the 920 requests without BAML.
+    Row 10's total Jev spend ≈ $0.26 (the reword run plus both 184 runs), against ≈ $0.20
+    approved.
+  - **Good-label audit:** two real commits add an abstraction nothing else in their diff
+    uses, and were relabelled by a rule applied to all 61 goods regardless of model scores
+    (`eval/fixtures.README.md`). Before the audit the rate was 4.9%; 2 of those 3
+    rejections were Jev being right.
+  - **Threshold: keep `REJECT_AT` = 0.70.** Sweep, first answer, wrongly blocked / caught,
+    without BAML (with BAML):
+    - 0.60: 6.8% / 83% (3.4% / 82%)
+    - 0.65: 1.7% / 82% (3.4% / 82%)
+    - 0.70: 1.7% / 78% (1.7% / 79%)
+    - 0.80: 1.7% / 65%
+    - 0.90: 0% / 26%
+
+    0.65 would catch ≈ 3 points more, but it was picked on the same set it's scored on, and
+    it doubles the BAML false-reject rate. Revisit on a held-out set.
+
+- **Row 10a, reword decision (2026-09-25): keep the question, reworded; don't drop it.**
+  - Old: "Does this change introduce an abstraction (class, interface, helper function, or
+    config parameter) that is used only once?"
+  - New: "Does this change add a class, interface, helper function, or config parameter
+    that nothing else in the diff uses?" The key `single_use_abstraction` is unchanged;
+    the page label is now "Unused abstraction".
+  - Result on the same 60, Jev without BAML, k=5 (`eval/run-python-reword.jsonl`):
+    - AUC, first answer: 0.921 → 0.939.
+    - Agreement: 0.950 → 0.967.
+    - Still "maybe" after 5 runs: 30% → 13%.
+    - Good changes wrongly blocked: 6.7% → 0%.
+    - Caught: 70% → 77%.
+    - **Every bar passes.** The other questions held or improved: 0.98 / 0.98 / 0.95.
+  - All 8 bad fixtures fit the new wording: see `eval/fixtures.README.md`.
+
 - **Fair comparison (row 11, qte77/feelings#4, squash-merged 2026-09-24 as `b19ab5f`):**
   - Jev token usage and input cost logged per request.
   - Every runner scored on the fixtures all runs answered.
@@ -189,12 +234,17 @@ uv run eval/claude_gate.py 1 claude-opus-5-5 8 < eval/fixtures.jsonl > eval/run-
 grep '"id": "good-14' eval/fixtures.jsonl > eval/one.jsonl
 for i in $(seq 10); do /usr/bin/time -f %e uv run eval/jev_gate.py 1 < eval/one.jsonl > /dev/null; done
 for i in $(seq 10); do /usr/bin/time -f %e baml run eval_gate -- --k 1 < eval/one.jsonl > /dev/null; done
+# more fixtures (row 10): one good + three bad per source commit, used commits skipped
+uv run eval/fixtures_build.py eval/fixtures.jsonl 31 31 \
+  ../polyfetch-scrape=qte77/polyfetch-scrape ../Agents-eval=qte77/Agents-eval \
+  ../doc-pipeline-engine=qte77/doc-pipeline-engine ../analyze-stock-kpi=qte77/analyze-stock-kpi > new.jsonl
 # results page data (committed; CI can't run evals). The deploy runs on push to main.
+# Sized eval (both Jev runners on all 184); the 2026-09-24 pilot is frozen in site/data/pilot-2026-09-24.json.
 uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl \
-  "Jev, without BAML=eval/run-python.jsonl" "Jev, with BAML=eval/run-baml.jsonl" \
-  "Claude Haiku 4.5=eval/run-claude-haiku.jsonl" "Claude Sonnet 5=eval/run-claude-claude-sonnet-5.jsonl" \
-  "Claude Opus 5.5=eval/run-claude-claude-opus-5-5.jsonl"
+  "Jev, without BAML=eval/run-python-184.jsonl" "Jev, with BAML=eval/run-baml-184.jsonl"
+# Don't export Claude's 60-fixture runs alongside: export() keeps only fixtures every run answered.
 python3 -m http.server 8137 --directory site   # preview at http://localhost:8137/
+uv run --directory ../polyfetch-scrape python ../feelings/scripts/check_site.py <out_dir> [url]  # e2e page check
 ```
 
 ### Arc-start access checklist (owner, once)
@@ -268,8 +318,10 @@ Each becomes a row in the next arc if the result is "go".
 
 | What | Where |
 |---|---|
-| Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `error_summary`, `export`: several runs → strict JSON, NaN → null, every runner scored on the fixtures all runs answered, `fixtures_scored` next to `fixtures_total`, errors from each full run); tests `eval/test_metrics.py` |
-| Results page | `site/index.html`, `site/app.js` (KPI row, AUC dot plot, table), `site/style.css`, `site/data/results.json` (committed export); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
+| Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `error_summary`, `export`: several runs → strict JSON, NaN → null, every runner scored on the fixtures all runs answered, `fixtures_scored` next to `fixtures_total`, errors from each full run, plus a per-runner `sweep`; `sweep()`: false rejects and catch per threshold 0.50–0.90 on the first answer); tests `eval/test_metrics.py` |
+| Fixture builder | `eval/fixtures_build.py`: mutations `weaken_test` (top-level `==` with a truthy right side only), `add_unused_abstraction`, `add_duplication` (whole function, multi-line signatures), `add_scope_creep` (in-file / new file alternating); `_free` avoids names the diff already uses; `added_by`, `leaks`, `parses` guard every record; `select` serves the scarcest concern; `build`/`candidates` walk git. Tests `eval/test_fixtures_build.py`. Provenance and the good-label audit: `eval/fixtures.README.md` |
+| Page check (e2e) | `scripts/check_site.py`, run with polyfetch-scrape's patchright: light/dark × desktop/phone, fails on console/page errors, failed requests or horizontal scroll |
+| Results page | `site/index.html`, `site/app.js` (two sections, `render(id, url, questions)`: sized eval with KPI row, AUC dot plot, table and threshold sweep; the frozen pilot with its old-wording label), `site/style.css`, `site/data/results.json` (sized eval: both Jev runners on 184), `site/data/pilot-2026-09-24.json` (frozen 5-runner pilot on 60); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
 | Python runner | `eval/jev_gate.py` (`MODEL`, `INPUT_USD_PER_M` with its source, `check` → answers + usage, `cost_usd`, `run`, which writes `input_tokens`/`output_tokens`/`cost_usd` per record, records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
 | Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |
 | Claude baseline runner | `eval/claude_gate.py` (`SCHEMA`, `build_command`, `cli`, `check`, `run(workers=)`); tests `eval/test_claude_gate.py`; args `[k] [model] [workers]`, model defaults to `haiku` (current Haiku), any concrete id pins a version |
@@ -320,6 +372,5 @@ Each becomes a row in the next arc if the result is "go".
 | 15 | Tell TypeSafe about the 2026-09-23 WAF 403s at `github.com/typesafe-ai/typesafe-sdk-python/issues` (public, issues on, no existing 403/Cloudflare issue as of 2026-09-24). The block stopped by 2026-09-24 (0 errors in 300 requests), so it can't be bisected; only an informational issue with Ray ID `a3fb98092e48d4ca` (no IP) is left. | owner: default **don't file** (not reproducible) | Owner either confirms "don't file" (strike the row) or approves a draft, which is posted only after approval |
 | 16 | Jev fit across the owner's 21 repos: a survey by subagents on 2026-09-23, recorded here so it isn't lost. Recommended order: (1) generalise `feelings/eval` into a shared judge harness (questions, labelled fixtures, metrics, swappable provider); (2) move the shared Actions `gha-issue-triage` and `gha-rxiv-paper-eval` from hand-parsed LLM text to a fixed JSON output, then Jev as a provider; (3) vertical pilots on public text (CorinItemPhotoSales sold-listings filter, then ldnmxx fallback routing); (4) build-behind-gate for coding-harness-eval's solution grader. No-go, on purpose: pseudonymize-text (PII), m365dsc control checks (tenant data), claude-azure-workflows-gui production (EU in-tenant), doc-pipeline-engine (Jev rejected, issue #196), a2ui-agui-kit guard, vlm-toolkit triage (free today). The findings came from subagent reads and haven't been re-verified here. | owner: start as its own arc, or not (default: not until row 10 answers go/no-go) | Owner decides; if started, a new plan file `docs/plans/YYYY-MM-DD-NNNN-jev-estate-rollout.md` takes this row over |
 | 17 | Finish the `coding-agent-eval` → `coding-harness-eval` rename references in 4 repos. Three are on other branches with the owner's unpushed work: `.github-private-project-tracker` (`repos.txt`, the one that matters), `ldnmxx` (plus 4 untracked files) and `qte77.github.io`. `2026-06-job-research` has no GitHub remote. | owner: land or park those branches first; for the local-only repo, say whether a local commit is wanted | Each repo updated through a signed, squash-merged PR (or a local commit for the local-only repo), or explicitly dropped |
-| 10 | Properly sized eval: reword or drop `single_use_abstraction`; more fixtures (≥ 30 per concern, from more than one repo); token usage for the BAML runner, if `CheckDiff` can expose it cheaply | agent (fixture sourcing from other repos = data) | New question set passes the agreement bar; per-concern AUC holds on the larger set; blocked rate reported; reject threshold tuned (catch is 0.68 at the untuned 0.70 despite AUC 0.93–0.98) |
-| 8 | Claude repeat run (k=5) for agreement/spread, plus Claude end-to-end timing for one check (10 CLI calls per model, start-up included, same method as Jev; ≈ 30 calls), so every runner is timed the same way. Light k=1 run shipped, results in Status. | owner OKs session usage (≈ 930 calls for 3 models, ≈ $8 list) → agent | `run-claude-<model>.jsonl` has 300 records per model; agreement/spread rows and end-to-end p50/p95 added to the Status table and the results page |
+| 8 | Claude on the 184-fixture set with the reworded question, so it compares with the sized eval. Plus Claude end-to-end timing for one check (10 CLI calls per model, start-up included, same method as Jev; ≈ 30 calls). The k=1 pilot on 60 is shipped and frozen. | owner OKs session usage: k=1 ≈ 550 calls for 3 models (≈ $4.6 list), or k=5 for agreement ≈ 2,760 calls (≈ $23) → agent | `run-claude-<model>-184.jsonl` per model; the sized-eval section of the page shows Claude next to Jev; end-to-end p50/p95 in the Status |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |

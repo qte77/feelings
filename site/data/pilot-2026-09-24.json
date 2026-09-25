@@ -1,0 +1,326 @@
+{
+ "generated": "2026-09-24",
+ "fixtures_total": 60,
+ "fixtures_scored": 60,
+ "runners": [
+  {
+   "name": "Jev, without BAML",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9891826923076923,
+      "auc_post": 0.9855769230769231,
+      "agreement": 1.0,
+      "mean_std": 0.008434948415727877,
+      "post_maybe_rate": 0.05
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9206730769230769,
+      "auc_post": 0.9375,
+      "agreement": 0.95,
+      "mean_std": 0.01233158383745393,
+      "post_maybe_rate": 0.3
+     },
+     "duplication": {
+      "auc_pre": 0.9716981132075472,
+      "auc_post": 0.9703504043126685,
+      "agreement": 1.0,
+      "mean_std": 0.007996180412815218,
+      "post_maybe_rate": 0.03333333333333333
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9177897574123989,
+      "auc_post": 0.9487870619946092,
+      "agreement": 0.9833333333333333,
+      "mean_std": 0.007742223299784309,
+      "post_maybe_rate": 0.03333333333333333
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.06666666666666667,
+     "catch_rate": 0.7
+    },
+    "zero_std_share": 0.0875,
+    "latency_ms": {
+     "p50": 235.87878700004694,
+     "p95": 292.73643100009394
+    },
+    "cost_usd": {
+     "total": 0.038626980000000005,
+     "per_call": 0.0001287566
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "scope_creep.agreement": true,
+    "scope_creep.mean_std": true,
+    "single_use_abstraction.auc_post": true,
+    "single_use_abstraction.agreement": true,
+    "single_use_abstraction.mean_std": true,
+    "duplication.auc_post": true,
+    "duplication.agreement": true,
+    "duplication.mean_std": true,
+    "weakened_tests.auc_post": true,
+    "weakened_tests.agreement": true,
+    "weakened_tests.mean_std": true,
+    "pre.false_reject_rate": false,
+    "latency.p95": true
+   },
+   "go": false
+  },
+  {
+   "name": "Jev, with BAML",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9855769230769231,
+      "auc_post": 0.9855769230769231,
+      "agreement": 1.0,
+      "mean_std": 0.007539233483546569,
+      "post_maybe_rate": 0.05
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9194711538461539,
+      "auc_post": 0.9290865384615384,
+      "agreement": 0.9333333333333333,
+      "mean_std": 0.012139952414856454,
+      "post_maybe_rate": 0.2833333333333333
+     },
+     "duplication": {
+      "auc_pre": 0.977088948787062,
+      "auc_post": 0.9703504043126685,
+      "agreement": 1.0,
+      "mean_std": 0.008877428743339006,
+      "post_maybe_rate": 0.03333333333333333
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9380053908355795,
+      "auc_post": 0.944743935309973,
+      "agreement": 1.0,
+      "mean_std": 0.007043350293939542,
+      "post_maybe_rate": 0.03333333333333333
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.06666666666666667,
+     "catch_rate": 0.7
+    },
+    "zero_std_share": 0.09166666666666666,
+    "latency_ms": null,
+    "cost_usd": null,
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "scope_creep.agreement": true,
+    "scope_creep.mean_std": true,
+    "single_use_abstraction.auc_post": true,
+    "single_use_abstraction.agreement": false,
+    "single_use_abstraction.mean_std": true,
+    "duplication.auc_post": true,
+    "duplication.agreement": true,
+    "duplication.mean_std": true,
+    "weakened_tests.auc_post": true,
+    "weakened_tests.agreement": true,
+    "weakened_tests.mean_std": true,
+    "pre.false_reject_rate": false
+   },
+   "go": false
+  },
+  {
+   "name": "Claude Haiku 4.5",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9879807692307693,
+      "auc_post": 0.9879807692307693,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9050480769230769,
+      "auc_post": 0.9050480769230769,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "duplication": {
+      "auc_pre": 0.9663072776280324,
+      "auc_post": 0.9663072776280324,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9555256064690026,
+      "auc_post": 0.9555256064690026,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.13333333333333333,
+     "catch_rate": 0.7333333333333333
+    },
+    "zero_std_share": null,
+    "latency_ms": {
+     "p50": 15136.402570999962,
+     "p95": 21176.574513000105
+    },
+    "cost_usd": {
+     "total": 0.32349680000000003,
+     "per_call": 0.005391613333333334
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "single_use_abstraction.auc_post": true,
+    "duplication.auc_post": true,
+    "weakened_tests.auc_post": true,
+    "pre.false_reject_rate": false,
+    "latency.p95": false
+   },
+   "go": false
+  },
+  {
+   "name": "Claude Sonnet 5",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9927884615384616,
+      "auc_post": 0.9927884615384616,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9903846153846154,
+      "auc_post": 0.9903846153846154,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "duplication": {
+      "auc_pre": 0.9609164420485176,
+      "auc_post": 0.9609164420485176,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "weakened_tests": {
+      "auc_pre": 1.0,
+      "auc_post": 1.0,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.8666666666666667
+    },
+    "zero_std_share": null,
+    "latency_ms": {
+     "p50": 13499.00589300023,
+     "p95": 17681.011419999777
+    },
+    "cost_usd": {
+     "total": 0.3833074,
+     "per_call": 0.006388456666666667
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "single_use_abstraction.auc_post": true,
+    "duplication.auc_post": true,
+    "weakened_tests.auc_post": true,
+    "pre.false_reject_rate": true,
+    "latency.p95": false
+   },
+   "go": false
+  },
+  {
+   "name": "Claude Opus 5.5",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9891826923076923,
+      "auc_post": 0.9891826923076923,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9975961538461539,
+      "auc_post": 0.9975961538461539,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "duplication": {
+      "auc_pre": 0.9973045822102425,
+      "auc_post": 0.9973045822102425,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "weakened_tests": {
+      "auc_pre": 1.0,
+      "auc_post": 1.0,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.9666666666666667
+    },
+    "zero_std_share": null,
+    "latency_ms": {
+     "p50": 18870.449308999923,
+     "p95": 22804.834704000314
+    },
+    "cost_usd": {
+     "total": 0.8412192,
+     "per_call": 0.01402032
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "single_use_abstraction.auc_post": true,
+    "duplication.auc_post": true,
+    "weakened_tests.auc_post": true,
+    "pre.false_reject_rate": true,
+    "latency.p95": false
+   },
+   "go": false
+  }
+ ]
+}

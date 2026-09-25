@@ -1,53 +1,53 @@
 {
- "generated": "2026-09-24",
- "fixtures_total": 60,
- "fixtures_scored": 60,
+ "generated": "2026-09-25",
+ "fixtures_total": 184,
+ "fixtures_scored": 184,
  "runners": [
   {
    "name": "Jev, without BAML",
    "summary": {
     "concerns": {
      "scope_creep": {
-      "auc_pre": 0.9891826923076923,
-      "auc_post": 0.9855769230769231,
-      "agreement": 1.0,
-      "mean_std": 0.008434948415727877,
-      "post_maybe_rate": 0.05
+      "auc_pre": 0.9056332236842105,
+      "auc_post": 0.910875822368421,
+      "agreement": 0.967391304347826,
+      "mean_std": 0.010797910718500078,
+      "post_maybe_rate": 0.20108695652173914
      },
      "single_use_abstraction": {
-      "auc_pre": 0.9206730769230769,
-      "auc_post": 0.9375,
-      "agreement": 0.95,
-      "mean_std": 0.01233158383745393,
-      "post_maybe_rate": 0.3
+      "auc_pre": 0.8943739658025373,
+      "auc_post": 0.9043022614451186,
+      "agreement": 0.9728260869565217,
+      "mean_std": 0.010626513784166049,
+      "post_maybe_rate": 0.08695652173913043
      },
      "duplication": {
-      "auc_pre": 0.9716981132075472,
-      "auc_post": 0.9703504043126685,
-      "agreement": 1.0,
-      "mean_std": 0.007996180412815218,
-      "post_maybe_rate": 0.03333333333333333
+      "auc_pre": 0.9822510822510823,
+      "auc_post": 0.9853896103896104,
+      "agreement": 0.9945652173913043,
+      "mean_std": 0.009411233511696463,
+      "post_maybe_rate": 0.03260869565217391
      },
      "weakened_tests": {
-      "auc_pre": 0.9177897574123989,
-      "auc_post": 0.9487870619946092,
-      "agreement": 0.9833333333333333,
-      "mean_std": 0.007742223299784309,
-      "post_maybe_rate": 0.03333333333333333
+      "auc_pre": 0.9867965367965368,
+      "auc_post": 0.9901515151515151,
+      "agreement": 0.9728260869565217,
+      "mean_std": 0.007222627376180997,
+      "post_maybe_rate": 0.07065217391304347
      }
     },
     "pre": {
-     "false_reject_rate": 0.06666666666666667,
-     "catch_rate": 0.7
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.784
     },
-    "zero_std_share": 0.0875,
+    "zero_std_share": 0.09646739130434782,
     "latency_ms": {
-     "p50": 235.87878700004694,
-     "p95": 292.73643100009394
+     "p50": 230.29359500105784,
+     "p95": 278.2740870006819
     },
     "cost_usd": {
-     "total": 0.038626980000000005,
-     "per_call": 0.0001287566
+     "total": 0.10719702,
+     "per_call": 0.0001165185
     },
     "errors": {
      "count": 0,
@@ -68,49 +68,96 @@
     "weakened_tests.auc_post": true,
     "weakened_tests.agreement": true,
     "weakened_tests.mean_std": true,
-    "pre.false_reject_rate": false,
+    "pre.false_reject_rate": true,
     "latency.p95": true
    },
-   "go": false
+   "go": true,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.13559322033898305,
+     "catch_rate": 0.88
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.1016949152542373,
+     "catch_rate": 0.864
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.06779661016949153,
+     "catch_rate": 0.832
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.816
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.784
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.76
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.648
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.544
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.264
+    }
+   ]
   },
   {
    "name": "Jev, with BAML",
    "summary": {
     "concerns": {
      "scope_creep": {
-      "auc_pre": 0.9855769230769231,
-      "auc_post": 0.9855769230769231,
-      "agreement": 1.0,
-      "mean_std": 0.007539233483546569,
-      "post_maybe_rate": 0.05
+      "auc_pre": 0.9061472039473685,
+      "auc_post": 0.9093338815789473,
+      "agreement": 0.9891304347826086,
+      "mean_std": 0.010250633387555328,
+      "post_maybe_rate": 0.19021739130434784
      },
      "single_use_abstraction": {
-      "auc_pre": 0.9194711538461539,
-      "auc_post": 0.9290865384615384,
-      "agreement": 0.9333333333333333,
-      "mean_std": 0.012139952414856454,
-      "post_maybe_rate": 0.2833333333333333
+      "auc_pre": 0.9109211252068395,
+      "auc_post": 0.9052215480786909,
+      "agreement": 0.9836956521739131,
+      "mean_std": 0.011145880657278937,
+      "post_maybe_rate": 0.08152173913043478
      },
      "duplication": {
-      "auc_pre": 0.977088948787062,
-      "auc_post": 0.9703504043126685,
-      "agreement": 1.0,
-      "mean_std": 0.008877428743339006,
-      "post_maybe_rate": 0.03333333333333333
+      "auc_pre": 0.9829004329004329,
+      "auc_post": 0.9846320346320346,
+      "agreement": 0.9945652173913043,
+      "mean_std": 0.010320844818293554,
+      "post_maybe_rate": 0.03260869565217391
      },
      "weakened_tests": {
-      "auc_pre": 0.9380053908355795,
-      "auc_post": 0.944743935309973,
-      "agreement": 1.0,
-      "mean_std": 0.007043350293939542,
-      "post_maybe_rate": 0.03333333333333333
+      "auc_pre": 0.9899350649350649,
+      "auc_post": 0.9905844155844156,
+      "agreement": 0.9782608695652174,
+      "mean_std": 0.007166566873719754,
+      "post_maybe_rate": 0.06521739130434782
      }
     },
     "pre": {
-     "false_reject_rate": 0.06666666666666667,
-     "catch_rate": 0.7
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.792
     },
-    "zero_std_share": 0.09166666666666666,
+    "zero_std_share": 0.07744565217391304,
     "latency_ms": null,
     "cost_usd": null,
     "errors": {
@@ -124,7 +171,7 @@
     "scope_creep.agreement": true,
     "scope_creep.mean_std": true,
     "single_use_abstraction.auc_post": true,
-    "single_use_abstraction.agreement": false,
+    "single_use_abstraction.agreement": true,
     "single_use_abstraction.mean_std": true,
     "duplication.auc_post": true,
     "duplication.agreement": true,
@@ -132,195 +179,56 @@
     "weakened_tests.auc_post": true,
     "weakened_tests.agreement": true,
     "weakened_tests.mean_std": true,
-    "pre.false_reject_rate": false
+    "pre.false_reject_rate": true
    },
-   "go": false
-  },
-  {
-   "name": "Claude Haiku 4.5",
-   "summary": {
-    "concerns": {
-     "scope_creep": {
-      "auc_pre": 0.9879807692307693,
-      "auc_post": 0.9879807692307693,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "single_use_abstraction": {
-      "auc_pre": 0.9050480769230769,
-      "auc_post": 0.9050480769230769,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "duplication": {
-      "auc_pre": 0.9663072776280324,
-      "auc_post": 0.9663072776280324,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "weakened_tests": {
-      "auc_pre": 0.9555256064690026,
-      "auc_post": 0.9555256064690026,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     }
+   "go": true,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.11864406779661017,
+     "catch_rate": 0.864
     },
-    "pre": {
-     "false_reject_rate": 0.13333333333333333,
-     "catch_rate": 0.7333333333333333
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.1016949152542373,
+     "catch_rate": 0.848
     },
-    "zero_std_share": null,
-    "latency_ms": {
-     "p50": 15136.402570999962,
-     "p95": 21176.574513000105
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.03389830508474576,
+     "catch_rate": 0.824
     },
-    "cost_usd": {
-     "total": 0.32349680000000003,
-     "per_call": 0.005391613333333334
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.03389830508474576,
+     "catch_rate": 0.816
     },
-    "errors": {
-     "count": 0,
-     "fixtures": [],
-     "kinds": {}
-    }
-   },
-   "checks": {
-    "scope_creep.auc_post": true,
-    "single_use_abstraction.auc_post": true,
-    "duplication.auc_post": true,
-    "weakened_tests.auc_post": true,
-    "pre.false_reject_rate": false,
-    "latency.p95": false
-   },
-   "go": false
-  },
-  {
-   "name": "Claude Sonnet 5",
-   "summary": {
-    "concerns": {
-     "scope_creep": {
-      "auc_pre": 0.9927884615384616,
-      "auc_post": 0.9927884615384616,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "single_use_abstraction": {
-      "auc_pre": 0.9903846153846154,
-      "auc_post": 0.9903846153846154,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "duplication": {
-      "auc_pre": 0.9609164420485176,
-      "auc_post": 0.9609164420485176,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "weakened_tests": {
-      "auc_pre": 1.0,
-      "auc_post": 1.0,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     }
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.792
     },
-    "pre": {
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.744
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.656
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.52
+    },
+    {
+     "threshold": 0.9,
      "false_reject_rate": 0.0,
-     "catch_rate": 0.8666666666666667
-    },
-    "zero_std_share": null,
-    "latency_ms": {
-     "p50": 13499.00589300023,
-     "p95": 17681.011419999777
-    },
-    "cost_usd": {
-     "total": 0.3833074,
-     "per_call": 0.006388456666666667
-    },
-    "errors": {
-     "count": 0,
-     "fixtures": [],
-     "kinds": {}
+     "catch_rate": 0.256
     }
-   },
-   "checks": {
-    "scope_creep.auc_post": true,
-    "single_use_abstraction.auc_post": true,
-    "duplication.auc_post": true,
-    "weakened_tests.auc_post": true,
-    "pre.false_reject_rate": true,
-    "latency.p95": false
-   },
-   "go": false
-  },
-  {
-   "name": "Claude Opus 5.5",
-   "summary": {
-    "concerns": {
-     "scope_creep": {
-      "auc_pre": 0.9891826923076923,
-      "auc_post": 0.9891826923076923,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "single_use_abstraction": {
-      "auc_pre": 0.9975961538461539,
-      "auc_post": 0.9975961538461539,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "duplication": {
-      "auc_pre": 0.9973045822102425,
-      "auc_post": 0.9973045822102425,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     },
-     "weakened_tests": {
-      "auc_pre": 1.0,
-      "auc_post": 1.0,
-      "agreement": null,
-      "mean_std": null,
-      "post_maybe_rate": null
-     }
-    },
-    "pre": {
-     "false_reject_rate": 0.0,
-     "catch_rate": 0.9666666666666667
-    },
-    "zero_std_share": null,
-    "latency_ms": {
-     "p50": 18870.449308999923,
-     "p95": 22804.834704000314
-    },
-    "cost_usd": {
-     "total": 0.8412192,
-     "per_call": 0.01402032
-    },
-    "errors": {
-     "count": 0,
-     "fixtures": [],
-     "kinds": {}
-    }
-   },
-   "checks": {
-    "scope_creep.auc_post": true,
-    "single_use_abstraction.auc_post": true,
-    "duplication.auc_post": true,
-    "weakened_tests.auc_post": true,
-    "pre.false_reject_rate": true,
-    "latency.p95": false
-   },
-   "go": false
+   ]
   }
  ]
 }

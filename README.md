@@ -33,6 +33,7 @@ echo "prod is down and customers can't log in" | baml run urgent
 baml run inbox -- --email "any chance you have 30 min next week to chat?"
 baml run demo                    # enums, literal unions, class fan-out, ints…
 git log --format=%s | baml run grep_with_vibes -- --feeling "scary to revert"
+git diff HEAD~1 | baml run code_review -- --message "$(git log -1 --format=%B)"
 baml test                        # offline — inspects the Jev requests, no key needed
 ```
 
@@ -159,6 +160,39 @@ Trigger full GC from reserved object-slot spending (#4840)
 
 Forty commit subjects, judged in parallel, under a second.
 
+### 8. Check a code change before CI runs
+
+`.fill<T>()` turns a class into several questions in one request, so a pre-CI
+review is a class and a pipe:
+
+```baml
+class Review {
+    scope_creep: float        @description("Does this change add functionality beyond what its commit message describes?"),
+    unused_abstraction: float @description("Does this change add a class, interface, helper function, or config parameter that nothing else in the diff uses?"),
+    duplication: float        @description("Does this change duplicate logic that already appears elsewhere in the same diff?"),
+    weakened_tests: float     @description("Does this change weaken, skip, or delete tests or assertions?"),
+}
+
+let review = Change { message: message, diff: read_stdin_lines().join("\n") }.fill<Review>();
+```
+
+```sh
+$ git diff HEAD~1 | baml run code_review -- --message "$(git log -1 --format=%B)"
+{"scope_creep":0.1,"unused_abstraction":0.08,"duplication":0.05,"weakened_tests":0.05}
+```
+
+Measured on 184 labelled changes from four public repos (the same four questions,
+asked of a pinned `jev-1.13.0`; this example uses `jev-latest`), these questions separate
+problem changes from good ones at 0.89–0.99 (AUC). At a 0.7 cut-off they catch 78%
+of problem changes and flag 1 of 59 good ones, in ~0.3 s and ~$0.0001 per check;
+the same through BAML and through the Python SDK. Full method and data:
+[qte77.github.io/feelings](https://qte77.github.io/feelings/).
+
+One thing that mattered: **ask about what's in the input.** "Is this abstraction
+used only once?" needs the whole codebase, which Jev can't see; rewording it to
+"…that nothing else in the diff uses?" took false flags on good changes from
+6.7% to 0% on the same examples.
+
 ## How `.feels()` works
 
 [`vibes.baml`](baml_src/vibes.baml), abridged:
@@ -219,4 +253,5 @@ a class whose fields are `bool`, `float`, enums, or literal unions. `string`,
 | [`baml_src/inbox.baml`](baml_src/inbox.baml) | confidence gate → route → draft → rewrite loop → subject |
 | [`baml_src/triage.baml`](baml_src/triage.baml) | enums, literal unions, class fan-out, ints, concurrency |
 | [`baml_src/grep_with_vibes.baml`](baml_src/grep_with_vibes.baml) | grep, but the pattern is a feeling — a stdin-driven shell tool |
+| [`baml_src/code_review.baml`](baml_src/code_review.baml) | a pre-CI code-change check: four questions, one `.fill<Review>()` request |
 | [`baml_src/vibes_test.baml`](baml_src/vibes_test.baml) | offline tests that inspect the Jev request shape |

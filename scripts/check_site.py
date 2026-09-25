@@ -57,7 +57,7 @@ with sync_playwright() as p:
             tiles = page.locator("#tiles > div").count()
             ratings = page.locator("#ratings li").count()
             opened = page.locator("details[open]").count()
-            expect("labelled code changes" in verdict, f"{where}: no verdict")
+            expect("real commits as their authors wrote them" in verdict, f"{where}: no verdict")
             expect(tiles == 3, f"{where}: {tiles} tiles")
             expect(ratings == 4, f"{where}: {ratings} ratings")
             expect(opened == 0, f"{where}: {opened} sections open on load")

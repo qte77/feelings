@@ -81,7 +81,7 @@ with sync_playwright() as p:
                 rows
                 == {
                     "compare-table": 4,
-                    "sized-table": 2,
+                    "sized-table": 5,
                     "pilot-table": 5,
                     "sweep-table": 9,
                 },

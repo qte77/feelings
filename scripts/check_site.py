@@ -87,6 +87,14 @@ with sync_playwright() as p:
                 },
                 f"{where}: rows {rows}",
             )
+            asked = [t for t in page.locator(".asked").all_inner_texts() if t.endswith("?”")]
+            expect(len(asked) == 4, f"{where}: {len(asked)} exact questions shown")
+            version = page.locator("#version").inner_text()
+            expect(bool(version.strip()), f"{where}: no version in the footer")
+            expect(
+                "Chart.js" not in page.locator("body").inner_text(),
+                f"{where}: Chart.js still mentioned",
+            )
 
             before = page.locator("#frr-value").inner_text()
             page.locator("#threshold").fill("0.5")

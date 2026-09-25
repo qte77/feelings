@@ -54,7 +54,15 @@ The builder's rules for the new records:
 - The good records' real diffs come from filters (size 400–12000 chars, skip dep, docs
   and format commits, skip diffs that already remove asserts or add `pytest.mark.skip`),
   **not a manual review**.
-Totals: 61 good, and 30 / 31 / 30 / 32 bad for weakened_tests / single_use_abstraction
+**Good-label audit (2026-09-25)**: every good record was checked for added non-test
+classes or functions that nothing else in its diff mentions. The rule was applied to all
+61, whatever any model scored. Six matched; four are used by a framework (a file-like
+`read()`, `autouse` pytest fixtures, `@app.command()` CLI functions) and stay good. Two
+real commits genuinely add an abstraction nothing uses (Agents-eval `812f145`:
+`DummyTool`, `use_tool`; doc-pipeline-engine `ee01aed`: `AdapterBase`). All records from
+those two sources now carry `single_use_abstraction: true`, and their real-diff records
+are renamed `bad-NN-single_use_abstraction-real-<sha>`.
+Totals: 59 good, and 30 / 37 / 30 / 32 bad for weakened_tests / single_use_abstraction
 / duplication / scope_creep.
 **Limits**: "good" labels are manual spot-review for the original 60 and filter-based for the extension, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and

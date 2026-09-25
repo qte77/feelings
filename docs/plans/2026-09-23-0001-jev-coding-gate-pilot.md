@@ -5,7 +5,7 @@
 ### Start here (handoff, 2026-09-25)
 
 - **State:** `main` is clean.
-  - #1–#12 are merged on the fork `qte77/feelings`; release `v0.3.0`.
+  - #1–#16 are merged on the fork `qte77/feelings`; release `v0.4.0`.
   - The page is layered (#12): details sit behind `#compare`, `#strictness` and `#method`.
   - Results live at https://qte77.github.io/feelings/.
   - Local run files (`eval/run-*.jsonl`) are gitignored; the page data is committed.
@@ -112,6 +112,23 @@ Nothing is wired into a real workflow until question 1 is "go".
   horizontal page scroll. After a new eval run, re-export `site/data/results.json`
   (see Commands); the deploy runs on push to `main`.
 
+- **Row 8, Claude on the 184 (2026-09-25, branch `feat/claude-on-184`):** all five setups
+  scored on the same 184 changes and the same four questions. First answer, AUC averaged
+  over the four questions:
+
+  | Setup | Avg AUC | Wrongly flags | Catches | p95 | $/check |
+  |---|---|---|---|---|---|
+  | Jev, without BAML | 0.942 | 1.7% | 78% | 0.28 s | 0.00012 |
+  | Jev, with BAML | 0.947 | 1.7% | 79% | — | — |
+  | Claude Haiku 4.5 | 0.899 | 11.9% | 79% | 27.9 s | 0.0092 |
+  | Claude Sonnet 5 | 0.958 | 0% | 90% | 21.7 s | 0.022 |
+  | Claude Opus 5.5 | 0.969 | 0% | 98% | 19.1 s | 0.042 |
+
+  - Jev separates better than Haiku and close to Sonnet and Opus. At the 0.70 cut-off,
+    Sonnet and Opus catch more, at about 80–350× the cost and about 70× the time.
+  - Claude's times were measured with 8 requests in flight; Claude ran with k=1.
+  - The page's Compare section now uses these numbers. The 60-change pilot stays under
+    "How we tested it".
 - **Owner decisions (2026-09-25).**
   - Row 18: go in analyze-stock-kpi.
   - Row 19: the full browser.
@@ -126,6 +143,7 @@ Nothing is wired into a real workflow until question 1 is "go".
   - The Chart.js mention is removed; its licence file still ships.
   - Each rating opens to its exact question, which the export now carries from `concerns.py`.
   - The status line is clearer.
+- **Release `v0.4.0` (2026-09-25):** Claude on the same 184 changes (#16), the version in the footer, exact questions per rating (#14), and the upstream drafts (#15).
 - **Release `v0.3.0` (2026-09-25):** the layered results page (#12).
 - **Page redesign (row 21, qte77/feelings#12, squash-merged as `76ad87e`, live and checked):**
   - Layered page: an answer up top and plain-language tiles and ratings, with the detail
@@ -430,7 +448,6 @@ Each becomes a row in the next arc if the result is "go".
 | 14 | CI for the fork: a `python` job (ruff + pytest on `eval/`, offline) and a `docs` job calling the reusable `qte77/.github/.github/workflows/lint-md-links.yml@main` (caller must grant `issues: write`). A `baml` job only once the nightly toolchain can be installed and pinned in CI. No shared Python test workflow exists in `qte77/.github`. | agent: approved by the owner 2026-09-25 | Pre-staged as an open PR after running markdownlint + lychee locally on the upstream README and the plan; all jobs green on the PR |
 | 16 | Jev fit across the owner's 21 repos: a survey by subagents on 2026-09-23, recorded here so it isn't lost. Recommended order: (1) generalise `feelings/eval` into a shared judge harness (questions, labelled fixtures, metrics, swappable provider); (2) move the shared Actions `gha-issue-triage` and `gha-rxiv-paper-eval` from hand-parsed LLM text to a fixed JSON output, then Jev as a provider; (3) vertical pilots on public text (CorinItemPhotoSales sold-listings filter, then ldnmxx fallback routing); (4) build-behind-gate for coding-harness-eval's solution grader. No-go, on purpose: pseudonymize-text (PII), m365dsc control checks (tenant data), claude-azure-workflows-gui production (EU in-tenant), doc-pipeline-engine (Jev rejected, issue #196), a2ui-agui-kit guard, vlm-toolkit triage (free today). The findings came from subagent reads and haven't been re-verified here. | owner: wait for the row 18 trial (owner, 2026-09-25) | Owner decides; if started, a new plan file `docs/plans/YYYY-MM-DD-NNNN-jev-estate-rollout.md` takes this row over |
 | 17 | Finish the `coding-agent-eval` → `coding-harness-eval` rename references in 4 repos. Three are on other branches with the owner's unpushed work: `.github-private-project-tracker` (`repos.txt`, the one that matters), `ldnmxx` (plus 4 untracked files) and `qte77.github.io`. `2026-06-job-research` has no GitHub remote. | owner: land or park those branches first; for the local-only repo, say whether a local commit is wanted | Each repo updated through a signed, squash-merged PR (or a local commit for the local-only repo), or explicitly dropped |
-| 8 | Claude on the 184-fixture set with the reworded question, so it compares with the sized eval. Plus Claude end-to-end timing for one check (10 CLI calls per model, start-up included, same method as Jev; ≈ 30 calls). The k=1 pilot on 60 is shipped and frozen. | agent: approved by the owner 2026-09-25 (k=1, ≈ 550 calls); **run started 2026-09-25**, output `eval/run-claude-<model>-184.jsonl` | `run-claude-<model>-184.jsonl` per model; the sized-eval section of the page shows Claude next to Jev; end-to-end p50/p95 in the Status |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent: the owner picked **Codex CLI, Gemini CLI, opencode and HarnessRouter** (github.com/HarnessRouter/harnessrouter), 2026-09-25. Each needs its own login or key on this machine; ask for any that are missing | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |
 | 18 | **Question 1, go / no-go.** The sized eval passes every bar for both runners. Recommended next step: a **shadow-mode trial** in one real repo's CI, where Jev scores each PR's diff, posts the four probabilities as a check summary and **never blocks**; compare against human review for a few weeks. It opens the arc's "Deliberately not built" items (the diff hook, a judge interface). Caveats: synthetic mutations, filter-based good labels for 59 fixtures, and no Claude comparison on the 184 yet (row 8). | agent: **go in analyze-stock-kpi** (owner, 2026-09-25), including setting its `TYPESAFE_API_KEY` repo secret from `.env` with `gh secret set` | A new arc plan `docs/plans/YYYY-MM-DD-0002-jev-shadow-trial.md` takes this row over, or the owner records "no-go" here |
 | 19 | Example browser on the page, in analyze-stock-kpi's style: a table of all 184 fixtures with each runner's first-answer scores, and fuzzy search (Fuse.js v7.0.0, vendored like analyze-stock-kpi's `ui/public/vendor/fuse.min.js` + Apache-2.0 `LICENSE`) over `message`, `source_repo` and `id`. Label chips filter exactly; the diff opens on expand. State lives in the URL (`q`, `label`, `repo`, `runner`, `sort`) via a pure `state.js`, copying analyze-stock-kpi's `ui/lib/state.js` pattern: defaults dropped, `history.replaceState`, unknown params kept. That pattern's tests run with `node --test` (no npm here). | agent: the owner chose the **full browser** (2026-09-25); it goes in the layered page as an `#examples` section | `state.js` tested first; the export writes per-fixture scores to `site/data/`; `scripts/check_site.py` covers search and deep links |

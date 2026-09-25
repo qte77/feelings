@@ -239,6 +239,339 @@
      "catch_rate": 0.256
     }
    ]
+  },
+  {
+   "name": "Claude Haiku 4.5",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.911389802631579,
+      "auc_post": 0.911389802631579,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.8319544033829748,
+      "auc_post": 0.8319544033829748,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "duplication": {
+      "auc_pre": 0.9641774891774891,
+      "auc_post": 0.9641774891774891,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "weakened_tests": {
+      "auc_pre": 0.8896103896103896,
+      "auc_post": 0.8896103896103896,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.11864406779661017,
+     "catch_rate": 0.792,
+     "n_good": 59,
+     "n_bad": 125
+    },
+    "zero_std_share": null,
+    "latency_ms": {
+     "p50": 17976.993950999713,
+     "p95": 27869.059575999927
+    },
+    "cost_usd": {
+     "total": 1.6945905,
+     "per_call": 0.009209730978260871
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "single_use_abstraction.auc_post": true,
+    "duplication.auc_post": true,
+    "weakened_tests.auc_post": true,
+    "pre.false_reject_rate": false,
+    "latency.p95": false
+   },
+   "go": false,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.1864406779661017,
+     "catch_rate": 0.848
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.1864406779661017,
+     "catch_rate": 0.848
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.1864406779661017,
+     "catch_rate": 0.848
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.1694915254237288,
+     "catch_rate": 0.832
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.11864406779661017,
+     "catch_rate": 0.792
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.05084745762711865,
+     "catch_rate": 0.72
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.05084745762711865,
+     "catch_rate": 0.6
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.528
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.248
+    }
+   ]
+  },
+  {
+   "name": "Claude Sonnet 5",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9336965460526315,
+      "auc_post": 0.9336965460526315,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.9174480603052032,
+      "auc_post": 0.9174480603052032,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "duplication": {
+      "auc_pre": 0.9964285714285714,
+      "auc_post": 0.9964285714285714,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9845238095238096,
+      "auc_post": 0.9845238095238096,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.904,
+     "n_good": 59,
+     "n_bad": 125
+    },
+    "zero_std_share": null,
+    "latency_ms": {
+     "p50": 14468.65052800058,
+     "p95": 21717.64560199972
+    },
+    "cost_usd": {
+     "total": 4.1278036,
+     "per_call": 0.022433715217391303
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "single_use_abstraction.auc_post": true,
+    "duplication.auc_post": true,
+    "weakened_tests.auc_post": true,
+    "pre.false_reject_rate": true,
+    "latency.p95": false
+   },
+   "go": false,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.01694915254237288,
+     "catch_rate": 0.944
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.936
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.928
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.912
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.904
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.896
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.832
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.784
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.456
+    }
+   ]
+  },
+  {
+   "name": "Claude Opus 5.5",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.9786184210526315,
+      "auc_post": 0.9786184210526315,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.8969479683765398,
+      "auc_post": 0.8969479683765398,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "duplication": {
+      "auc_pre": 0.999025974025974,
+      "auc_post": 0.999025974025974,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     },
+     "weakened_tests": {
+      "auc_pre": 1.0,
+      "auc_post": 1.0,
+      "agreement": null,
+      "mean_std": null,
+      "post_maybe_rate": null
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.984,
+     "n_good": 59,
+     "n_bad": 125
+    },
+    "zero_std_share": null,
+    "latency_ms": {
+     "p50": 13245.209579000402,
+     "p95": 19122.67943400002
+    },
+    "cost_usd": {
+     "total": 7.6954018,
+     "per_call": 0.041822835869565214
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "single_use_abstraction.auc_post": true,
+    "duplication.auc_post": true,
+    "weakened_tests.auc_post": true,
+    "pre.false_reject_rate": true,
+    "latency.p95": false
+   },
+   "go": false,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.05084745762711865,
+     "catch_rate": 1.0
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.03389830508474576,
+     "catch_rate": 1.0
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.992
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.984
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.984
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.968
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.96
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.912
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.712
+    }
+   ]
   }
  ]
 }

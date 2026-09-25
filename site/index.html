@@ -65,16 +65,17 @@
     <details id="compare" class="layer">
       <summary><h2>How does it compare with Claude?</h2></summary>
       <div class="layer-body">
-        <p class="caveat"><strong>Earlier, smaller test:</strong> <span data-fill="pilot-total">60</span> changes, and the
-          old wording of the unused-abstraction question. Claude hasn't been run on the full <span data-fill="fixtures">184</span> yet.</p>
+        <p class="note">All setups on the same <span data-fill="fixtures">184</span> changes and the same four questions.
+          Claude answered each change once, and Jev is scored on its first answer, so they compare fairly. Claude's times were
+          measured with 8 requests in flight at once.</p>
         <div class="scroll"><table class="compare" id="compare-table">
-          <caption class="sr-only">Jev and three Claude models on the earlier test</caption>
+          <caption class="sr-only">Jev and three Claude models on the same changes</caption>
         </table></div>
         <p id="compare-summary"></p>
         <details class="sub" id="compare-chart">
           <summary>Per-question chart</summary>
           <p class="note">Each dot is one setup's score for one kind of problem. The axis starts at <span data-fill="axis-min">0.85</span>.</p>
-          <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev and three Claude models on the earlier test; the numbers are in the full table under How we tested it."></canvas></div>
+          <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev with and without BAML and three Claude models; the numbers are in the full results under How we tested it."></canvas></div>
         </details>
       </div>
     </details>
@@ -127,21 +128,21 @@
         </dl>
 
         <details class="sub" id="full-results">
-          <summary>Full results, both setups</summary>
+          <summary>Full results, all setups</summary>
           <p class="note">"Meets the bar" counts the pass bars met: separation, repeat agreement, false flags and speed.</p>
           <div class="scroll"><table class="results" id="sized-table"><caption class="sr-only">Results on all changes</caption></table></div>
         </details>
-        <details class="sub" id="full-chart">
-          <summary>Per-question chart, both setups</summary>
+        <details class="sub" id="pilot-chart">
+          <summary>Earlier test (<span data-fill="pilot-total">60</span> changes, old wording), per-question chart</summary>
           <p class="note">The axis starts at <span data-fill="axis-min">0.85</span>.</p>
-          <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev with and without BAML; the numbers are in the full results table."></canvas></div>
+          <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev and three Claude models on the earlier 60-change test; the numbers are in the table below."></canvas></div>
         </details>
         <details class="sub" id="pilot-results">
-          <summary>Earlier test, full table (Jev and Claude)</summary>
+          <summary>Earlier test (60 changes, old wording), full table</summary>
           <div class="scroll"><table class="results" id="pilot-table"><caption class="sr-only">Earlier test results</caption></table></div>
         </details>
         <details class="sub" id="threshold-table">
-          <summary>Every strictness setting, both setups</summary>
+          <summary>Every strictness setting, all setups</summary>
           <div class="scroll"><table class="sweep" id="sweep-table"><caption class="sr-only">Catches and wrongly flags per setting</caption></table></div>
         </details>
         <p>Raw data: <a href="data/results.json">results.json</a> · <a href="data/pilot-2026-09-24.json">pilot-2026-09-24.json</a> ·

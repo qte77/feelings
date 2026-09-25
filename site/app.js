@@ -61,7 +61,7 @@ function fill(key, value) {
 
 // ---- Layer 0 ---------------------------------------------------------------------------------
 
-function answer(sized, pilot) {
+function answer(sized) {
   const jev = sized.runners.find((r) => r.name === HEADLINE).summary;
   const pre = jev.pre;
   const flagged = Math.round(pre.false_reject_rate * pre.n_good);
@@ -71,7 +71,7 @@ function answer(sized, pilot) {
     `wrongly flagged ${flagged} of ${pre.n_good} good ones, in ${secs(jev.latency_ms.p95)} for ` +
     `${usd(jev.cost_usd.per_call)} per check.`;
 
-  const claude = pilot.runners.filter((r) => !isJev(r.name)).map((r) => r.summary);
+  const claude = sized.runners.filter((r) => !isJev(r.name)).map((r) => r.summary);
   const p95s = claude.map((s) => s.latency_ms.p95);
   const costs = claude.map((s) => s.cost_usd.per_call);
   const tiles = [
@@ -373,18 +373,18 @@ fill("n-bad", head.pre.n_bad);
 const agree = Object.values(head.concerns).map((c) => c.agreement);
 fill("agreement", `${pct(Math.min(...agree))}–${pct(Math.max(...agree))}`);
 
-answer(sized, pilot);
+answer(sized);
 ratings(sized);
-compare(pilot);
+compare(sized);
 strictness(sized);
 resultsTable(document.getElementById("sized-table"), sized, QUESTIONS);
 resultsTable(document.getElementById("pilot-table"), pilot, PILOT_QUESTIONS);
 sweepTable(document.getElementById("sweep-table"), sized);
 drawWhenOpened(document.getElementById("compare-chart"), () =>
-  dotChart(document.querySelector("#compare-chart canvas"), pilot, PILOT_QUESTIONS),
+  dotChart(document.querySelector("#compare-chart canvas"), sized, QUESTIONS),
 );
-drawWhenOpened(document.getElementById("full-chart"), () =>
-  dotChart(document.querySelector("#full-chart canvas"), sized, QUESTIONS),
+drawWhenOpened(document.getElementById("pilot-chart"), () =>
+  dotChart(document.querySelector("#pilot-chart canvas"), pilot, PILOT_QUESTIONS),
 );
 openFromHash();
 window.addEventListener("hashchange", openFromHash);

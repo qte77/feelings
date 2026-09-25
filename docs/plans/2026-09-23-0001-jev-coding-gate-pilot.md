@@ -2,6 +2,33 @@
 
 ## Status — read this first
 
+### Start here (handoff, 2026-09-25)
+
+- **State:** `main` is clean.
+  - #1–#10 are merged on the fork `qte77/feelings`; release `v0.2.0`.
+  - Results live at https://qte77.github.io/feelings/.
+  - Local run files (`eval/run-*.jsonl`) are gitignored; the page data is committed.
+- **Where the answers are:**
+  - The sized eval, "Row 10" below: both Jev runners (with and without BAML) pass every
+    bar on 184 fixtures.
+  - The pilot, "Answers" below.
+- **Next, in order:** the "Remaining work" table.
+  - Every row is owner-gated, so start by asking the owner. The recommended first ask is
+    row 18 (shadow-mode trial).
+  - Nothing is agent-only right now.
+- **How to work:**
+  - Commands are in "Commands"; code locations in "Source map".
+  - Rules: one topic branch per change, TDD for Python, and the full gate before any
+    push (ruff incl. `S`, pytest, `baml check`/`baml test`, actionlint and zizmor for
+    workflow changes, `scripts/check_site.py` for page changes).
+  - Squash-merge once green, delete the branches, and strike the plan row in the same PR.
+- **Watch-outs:** the list further down. Most often hit:
+  - Always pass `-R qte77/feelings`, or `gh` targets upstream.
+  - Commit signing can time out: retry, never disable it.
+  - Some other clones set `commit.gpgsign=false`: supersede with `cherry-pick -S`.
+  - BAML needs `. ~/.baml/env` and `BAML_AGENT_SKILL_CHECK=off`.
+  - Scratch folders don't survive sessions; `scripts/check_site.py` is committed.
+
 **Questions this arc answers:**
 
 1. Can Jev act as a fast check on code changes, in the style of
@@ -84,6 +111,8 @@ Nothing is wired into a real workflow until question 1 is "go".
   horizontal page scroll. After a new eval run, re-export `site/data/results.json`
   (see Commands); the deploy runs on push to `main`.
 
+- **Release `v0.2.0` (2026-09-25):** the sized eval (#8), brand favicon (#9) and docs
+  (#6, #7, #10) since `v0.1.0`. Notes are in the GitHub release.
 - **Release `v0.1.0` (2026-09-24):** the first tag on the fork. It covers #1–#5 and has no
   version file or changelog (none exist upstream either); the notes are in the GitHub
   release.
@@ -301,6 +330,11 @@ Each fixture is sent k=5 times; `eval/metrics.py` derives both modes from the sa
 - The refine loop, "while concerns remain and attempts < 3, rewrite": the shape of README §6
   and Probably's bounded `while`.
 - A provider-agnostic judge interface.
+- An agent-readiness-kit scan of the page (**deferred 2026-09-25**). The kit takes no
+  URL argument (it scans its own `config/properties.ts` list) and grades `llms.txt`,
+  `robots.txt` and `/.well-known/` at the domain root, so for `/feelings/` it would grade
+  qte77.github.io's root. It also files remediation issues in its own repo. To cover this
+  page, add it to that kit's property list instead.
 
 Each becomes a row in the next arc if the result is "go".
 
@@ -375,3 +409,6 @@ Each becomes a row in the next arc if the result is "go".
 | 17 | Finish the `coding-agent-eval` → `coding-harness-eval` rename references in 4 repos. Three are on other branches with the owner's unpushed work: `.github-private-project-tracker` (`repos.txt`, the one that matters), `ldnmxx` (plus 4 untracked files) and `qte77.github.io`. `2026-06-job-research` has no GitHub remote. | owner: land or park those branches first; for the local-only repo, say whether a local commit is wanted | Each repo updated through a signed, squash-merged PR (or a local commit for the local-only repo), or explicitly dropped |
 | 8 | Claude on the 184-fixture set with the reworded question, so it compares with the sized eval. Plus Claude end-to-end timing for one check (10 CLI calls per model, start-up included, same method as Jev; ≈ 30 calls). The k=1 pilot on 60 is shipped and frozen. | owner OKs session usage: k=1 ≈ 550 calls for 3 models (≈ $4.6 list), or k=5 for agreement ≈ 2,760 calls (≈ $23) → agent | `run-claude-<model>-184.jsonl` per model; the sized-eval section of the page shows Claude next to Jev; end-to-end p50/p95 in the Status |
 | 9 | Harness sweep: one thin runner per coding harness (Codex, Gemini CLI, opencode, …) in `eval/`, same pattern as `claude_gate.py`. See "Harness sweep: research (2026-09-23)". | agent (after owner picks the harnesses) | Each runner: headless flags, structured-output mode and settings isolation taken from that CLI's own docs (not memory); `stdin=DEVNULL`; offline tests; one live smoke call; records in the shared JSONL format |
+| 18 | **Question 1, go / no-go.** The sized eval passes every bar for both runners. Recommended next step: a **shadow-mode trial** in one real repo's CI, where Jev scores each PR's diff, posts the four probabilities as a check summary and **never blocks**; compare against human review for a few weeks. It opens the arc's "Deliberately not built" items (the diff hook, a judge interface). Caveats: synthetic mutations, filter-based good labels for 59 fixtures, and no Claude comparison on the 184 yet (row 8). | owner: go / no-go, and which repo (default: analyze-stock-kpi, where the first fixtures came from); a CI secret for `TYPESAFE_API_KEY` | A new arc plan `docs/plans/YYYY-MM-DD-0002-jev-shadow-trial.md` takes this row over, or the owner records "no-go" here |
+| 19 | Example browser on the page, in analyze-stock-kpi's style: a table of all 184 fixtures with each runner's first-answer scores, and fuzzy search (Fuse.js v7.0.0, vendored like analyze-stock-kpi's `ui/public/vendor/fuse.min.js` + Apache-2.0 `LICENSE`) over `message`, `source_repo` and `id`. Label chips filter exactly; the diff opens on expand. State lives in the URL (`q`, `label`, `repo`, `runner`, `sort`) via a pure `state.js`, copying analyze-stock-kpi's `ui/lib/state.js` pattern: defaults dropped, `history.replaceState`, unknown params kept. That pattern's tests run with `node --test` (no npm here). | owner: scope (the full browser, URL state only, or none) | `state.js` tested first; the export writes per-fixture scores to `site/data/`; `scripts/check_site.py` covers search and deep links |
+| 20 | Suspected bug in analyze-stock-kpi, found while reading it on 2026-09-25 and **not verified**: `ui/app.js:689` parses URL state with the fallback universe list before `populateUniversePicker` (l.700) loads `universes.json`, so deep links to universes outside that list may be dropped. | agent verifies with a headless deep-link test; owner approves the issue or PR in that repo | Reproduced (or disproved) with a URL; an issue or fix PR opened there only after approval |

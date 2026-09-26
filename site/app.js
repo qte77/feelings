@@ -66,19 +66,21 @@ function answer(sized) {
   const pre = jev.pre;
   const flagged = Math.round(pre.false_reject_rate * pre.n_good);
   const caught = Math.round(pre.catch_rate * pre.n_bad);
-  // Say what "problem" and "clean" mean here: how the test set was built (eval/fixtures.README.md).
+  // Define "clean" and "flawed" in plain words, once; the rest of the page uses only this pair
+  // (how the test set was built: eval/fixtures.README.md).
   document.getElementById("verdict").textContent =
-    `We gave it ${sized.fixtures_total} code changes: ${pre.n_good} real commits as their authors wrote them, and ` +
-    `${pre.n_bad} with one known problem (scope creep, an unused abstraction, duplicated code or a weakened test), ` +
-    `mostly real commits with the problem added on purpose. Jev flagged ${pct(pre.catch_rate)} of the problem ` +
-    `changes and ${flagged} of the ${pre.n_good} clean ones, in ${secs(jev.latency_ms.p95)} and ` +
+    `We tested it on ${sized.fixtures_total} code changes. ${pre.n_good} are clean: real commits, unchanged. ` +
+    `${pre.n_bad} are flawed: each has one issue a code reviewer should catch. The change does more than its ` +
+    `commit message says, adds code that nothing uses, copies code, or weakens a test. We added most of these ` +
+    `issues to real commits on purpose. Jev caught ${pct(pre.catch_rate)} of the flawed changes and wrongly ` +
+    `flagged ${flagged} of the ${pre.n_good} clean ones, in ${secs(jev.latency_ms.p95)} and ` +
     `${usd(jev.cost_usd.per_call)} per change.`;
 
   const claude = sized.runners.filter((r) => !isJev(r.name)).map((r) => r.summary);
   const p95s = claude.map((s) => s.latency_ms.p95);
   const costs = claude.map((s) => s.cost_usd.per_call);
   const tiles = [
-    ["Flags", pct(pre.catch_rate), `of problem changes (${caught} of ${pre.n_bad})`],
+    ["Catches", pct(pre.catch_rate), `of flawed changes (${caught} of ${pre.n_bad})`],
     ["Wrongly flags", pct(pre.false_reject_rate), `of clean changes (${flagged} of ${pre.n_good})`],
     [
       "Per check",
@@ -97,7 +99,7 @@ function answer(sized) {
 
 // ---- Layer 1 ---------------------------------------------------------------------------------
 
-// What a problem example of each kind looks like in the test set (see eval/fixtures.README.md).
+// What a flawed example of each kind looks like in the test set (see eval/fixtures.README.md).
 const EXAMPLES = {
   scope_creep: "A change that also adds an unrelated helper, e.g. a slugify() function the message never mentions.",
   single_use_abstraction: "A new config class that is created once and whose result nothing else uses.",
@@ -121,7 +123,7 @@ function ratings(sized) {
       summary.append(el("span", label, "q"), meter, el("span", word, "word"), el("span", fmt(auc), "num"));
       const body = el("div", undefined, "rating-body");
       // The exact wording comes from eval/concerns.py via the export, the same text both runners send.
-      body.append(el("p", `“${sized.questions[key]}”`, "asked"), el("p", `Problem example: ${EXAMPLES[key]}`, "note"));
+      body.append(el("p", `“${sized.questions[key]}”`, "asked"), el("p", `Flawed example: ${EXAMPLES[key]}`, "note"));
       details.append(summary, body);
       li.append(details);
       return li;
@@ -142,7 +144,7 @@ function compare(pilot) {
   const rows = pilot.runners.filter((r) => r.name !== "Jev, with BAML");
   const table = document.getElementById("compare-table");
   const head = table.createTHead().insertRow();
-  for (const h of ["Setup", "Tells good from bad (average of 4)", "Wrongly flags", "Time", "Cost"]) {
+  for (const h of ["Setup", "Tells flawed from clean (average of 4)", "Wrongly flags", "Time", "Cost"]) {
     const th = el("th", h);
     th.scope = "col";
     head.append(th);
@@ -176,7 +178,7 @@ function compare(pilot) {
   const fastest = Math.min(...claude.map((r) => r.summary.latency_ms.p95));
   const cheapest = claude.reduce((x, y) => (x.summary.cost_usd.per_call <= y.summary.cost_usd.per_call ? x : y));
   document.getElementById("compare-summary").textContent =
-    `In short: ${best.name} tells good from bad best. Jev is about ${roughly(fastest / jev.latency_ms.p95)}× faster ` +
+    `In short: ${best.name} tells flawed from clean best. Jev is about ${roughly(fastest / jev.latency_ms.p95)}× faster ` +
     `than the fastest Claude and about ${roughly(cheapest.summary.cost_usd.per_call / jev.cost_usd.per_call)}× cheaper ` +
     `than the cheapest (${cheapest.name}).`;
 }
@@ -195,15 +197,15 @@ function strictness(sized) {
       Math.abs(row.threshold - CURRENT_THRESHOLD) < 1e-9 ? "(current setting)" : "";
     document.getElementById("catch-bar").style.width = `${row.catch_rate * 100}%`;
     document.getElementById("catch-value").textContent =
-      `${pct(row.catch_rate)} of problem changes (${Math.round(row.catch_rate * n_bad)} of ${n_bad})`;
+      `${pct(row.catch_rate)} of flawed changes (${Math.round(row.catch_rate * n_bad)} of ${n_bad})`;
     // The wrongly-flags track spans 0-20%, so the 5% limit is visible.
     document.getElementById("frr-bar").style.width = `${Math.min(row.false_reject_rate / 0.2, 1) * 100}%`;
     document.getElementById("frr-value").textContent =
-      `${pct(row.false_reject_rate)} of good changes (${Math.round(row.false_reject_rate * n_good)} of ${n_good})`;
+      `${pct(row.false_reject_rate)} of clean changes (${Math.round(row.false_reject_rate * n_good)} of ${n_good})`;
     document.getElementById("threshold-note").textContent =
       row.false_reject_rate <= FRR_LIMIT
-        ? "Within the 5% limit for wrongly flagged good changes. Stricter settings miss more problems."
-        : "Over the 5% limit: too many good changes would be flagged.";
+        ? "Within the 5% limit for wrongly flagged clean changes. Stricter settings miss more flawed ones."
+        : "Over the 5% limit: too many clean changes would be flagged.";
   };
   input.addEventListener("input", show);
   show();
@@ -225,7 +227,7 @@ function resultsTable(table, data, questions) {
   const top = thead.insertRow();
   const sub = thead.insertRow();
   header(top, "Setup", { rows: 2 });
-  header(top, "Tells good from bad (1.0 = perfect)", { cols: qs.length, scope: "colgroup" });
+  header(top, "Tells flawed from clean (1.0 = perfect)", { cols: qs.length, scope: "colgroup" });
   header(top, "At the 0.70 setting", { cols: 2, scope: "colgroup" });
   header(top, "Time p50 / p95", { rows: 2 });
   header(top, "Cost per check", { rows: 2 });
@@ -301,7 +303,7 @@ function dotChart(canvas, data, questions) {
       maintainAspectRatio: false,
       animation: false,
       scales: {
-        x: { min, max: 1.0, ticks: { stepSize: 0.05 }, title: { display: true, text: "Tells good from bad" } },
+        x: { min, max: 1.0, ticks: { stepSize: 0.05 }, title: { display: true, text: "Tells flawed from clean" } },
         y: {
           type: "linear",
           reverse: true,

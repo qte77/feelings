@@ -1,6 +1,10 @@
 # fixtures.jsonl
 Labelled diffs for evaluating Jev (`scope_creep`, `single_use_abstraction`,
 `duplication`, `weakened_tests`).
+**Terms**: the results page calls the two groups **clean** (`good-*` records: a real commit,
+unchanged) and **flawed** (`bad-*` records: one issue a code reviewer should catch, mostly
+added to a real commit on purpose). Here and in the code they stay `good` / `bad`, because
+the record ids, run files and `results.json` keys (`n_good`, `n_bad`) use those names.
 
 **Source (original 60, ids 01–30)**: `analyze-stock-kpi` (github.com/qte77/analyze-stock-kpi). Verified
 public: GitHub page shows "Public" badge (WebFetch); local `LICENSE` =

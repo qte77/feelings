@@ -58,10 +58,21 @@ with sync_playwright() as p:
             ratings = page.locator("#ratings li").count()
             opened = page.locator("details[open]").count()
             expect(
-                "real commits as their authors wrote them" in verdict
+                "are clean: real commits, unchanged" in verdict
+                and "are flawed: each has one issue a code reviewer should catch"
+                in verdict
                 and "yes/no, choice or score" in page.locator(".lede").inner_text(),
                 f"{where}: no verdict",
             )
+            # One pair of terms, defined in the verdict: "clean" and "flawed".
+            # text_content, not inner_text: it includes the closed <details>.
+            text = page.locator("body").text_content()
+            stale = [
+                w
+                for w in ("problem change", "good change", "good from bad")
+                if w in text.lower()
+            ]
+            expect(not stale, f"{where}: undefined terms {stale}")
             expect(tiles == 3, f"{where}: {tiles} tiles")
             expect(ratings == 4, f"{where}: {ratings} ratings")
             expect(opened == 0, f"{where}: {opened} sections open on load")

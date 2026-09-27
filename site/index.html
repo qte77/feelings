@@ -116,11 +116,12 @@
     <details id="strictness" class="layer">
       <summary><h2>How strict should the check be?</h2></summary>
       <div class="layer-body">
-        <p>Jev scores each kind of flaw from 0 to 1. The check flags a change when any score reaches the setting below.</p>
+        <p>Jev scores each kind of flaw from 0 to 1. The check flags a change when any score reaches the setting below,
+          so a lower setting is stricter: it flags more.</p>
         <label class="slider" for="threshold">
-          <span>lenient</span>
-          <input id="threshold" type="range" min="0.5" max="0.9" step="0.05" value="0.7" aria-describedby="threshold-out">
           <span>strict</span>
+          <input id="threshold" type="range" min="0.5" max="0.9" step="0.05" value="0.7" aria-describedby="threshold-out">
+          <span>lenient</span>
         </label>
         <p class="setting">Setting: <output id="threshold-out" for="threshold">0.70</output> <span id="threshold-current"></span></p>
         <div class="meter">

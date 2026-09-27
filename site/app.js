@@ -204,7 +204,7 @@ function strictness(sized) {
       `${pct(row.false_reject_rate)} of clean changes (${Math.round(row.false_reject_rate * n_good)} of ${n_good})`;
     document.getElementById("threshold-note").textContent =
       row.false_reject_rate <= FRR_LIMIT
-        ? "Within the 5% limit for wrongly flagged clean changes. Stricter settings miss more flawed ones."
+        ? "Within the 5% limit for wrongly flagged clean changes. More lenient settings miss more flawed ones."
         : "Over the 5% limit: too many clean changes would be flagged.";
   };
   input.addEventListener("input", show);

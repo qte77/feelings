@@ -86,7 +86,13 @@ with sync_playwright() as p:
             )
             rows = {
                 t: page.locator(f"#{t} tbody tr").count()
-                for t in ("compare-table", "sized-table", "pilot-table", "sweep-table")
+                for t in (
+                    "compare-table",
+                    "sized-table",
+                    "pilot-table",
+                    "sweep-table",
+                    "external-table",
+                )
             }
             expect(
                 all(w > 0 for w in charts) and len(charts) == 2,
@@ -99,6 +105,7 @@ with sync_playwright() as p:
                     "sized-table": 5,
                     "pilot-table": 5,
                     "sweep-table": 9,
+                    "external-table": 2,
                 },
                 f"{where}: rows {rows}",
             )
@@ -144,6 +151,7 @@ with sync_playwright() as p:
     for anchor, wanted in (
         ("strictness", ["strictness"]),
         ("alternatives", ["alternatives"]),
+        ("external", ["external"]),
         ("compare-chart", ["compare", "compare-chart"]),
     ):
         page = browser.new_page()

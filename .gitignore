@@ -2,6 +2,7 @@
 # eval: only the labelled fixtures are tracked; run output and scratch inputs never are
 eval/*.jsonl
 !eval/fixtures.jsonl
+!eval/fixtures-ytdlp.jsonl
 eval/*.err
 __pycache__/
 # BAML's skill lives once, in .claude/skills/baml-core. `baml agent install` also writes a

@@ -365,9 +365,25 @@ function openFromHash() {
   target.scrollIntoView({ block: "start" });
 }
 
-const [sized, pilot] = await Promise.all([
+// ---- Held-out codebase (yt-dlp): same questions and setting, never used for tuning ----------
+
+function external(ext, sized) {
+  fill("ext-total", ext.fixtures_scored);
+  resultsTable(document.getElementById("external-table"), ext, QUESTIONS);
+  const on = (data) => data.runners.find((r) => r.name === HEADLINE).summary;
+  const e = on(ext);
+  const s = on(sized);
+  const avg = (sum) => mean(Object.keys(QUESTIONS).map((k) => sum.concerns[k].auc_pre));
+  document.getElementById("external-summary").textContent =
+    `${HEADLINE} tells flawed from clean at ${fmt(avg(e))} on average (${fmt(avg(s))} on the 184), catches ` +
+    `${pct(e.pre.catch_rate)} of flawed changes and wrongly flags ${Math.round(e.pre.false_reject_rate * e.pre.n_good)} ` +
+    `of ${e.pre.n_good} clean ones.`;
+}
+
+const [sized, pilot, ext] = await Promise.all([
   fetch("data/results.json").then((r) => r.json()),
   fetch("data/pilot-2026-09-24.json").then((r) => r.json()),
+  fetch("data/ytdlp.json").then((r) => r.json()),
 ]);
 fill("fixtures", sized.fixtures_total);
 fill("pilot-total", pilot.fixtures_total);
@@ -385,6 +401,7 @@ strictness(sized);
 resultsTable(document.getElementById("sized-table"), sized, QUESTIONS);
 resultsTable(document.getElementById("pilot-table"), pilot, PILOT_QUESTIONS);
 sweepTable(document.getElementById("sweep-table"), sized);
+external(ext, sized);
 drawWhenOpened(document.getElementById("compare-chart"), () =>
   dotChart(document.querySelector("#compare-chart canvas"), sized, QUESTIONS),
 );

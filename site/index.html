@@ -47,9 +47,9 @@
       <p class="lede"><a href="https://docs.typesafe.ai/">Jev</a> is TypeSafe's fast decision model: it answers typed
         questions (yes/no, choice or score) with a probability. Here it answers four yes/no questions about each change.
         <span id="verdict">Loading the results…</span></p>
-      <p class="status"><span class="chip">Passed our tests · not in use yet</span> Next: a trial in
-        <a href="https://github.com/qte77/analyze-stock-kpi">analyze-stock-kpi</a>, where Jev comments on each pull request
-        but never blocks it, compared with what human review finds.</p>
+      <p class="status"><span class="chip">Passed on our 4 repos · not in use yet</span> On a codebase it had never seen,
+        the same setting wrongly flagged far more clean changes (<a href="#external">details</a>), so each codebase needs its
+        own setting. Under consideration: a local check before each push that only comments and never blocks.</p>
       <dl class="kpis" id="tiles"></dl>
     </section>
 
@@ -79,6 +79,23 @@
           <p class="note">Each dot is one setup's score for one kind of flaw. The axis starts at <span data-fill="axis-min">0.85</span>.</p>
           <div class="chart"><canvas role="img" aria-label="Dot plot per question for Jev with and without BAML and three Claude models; the numbers are in the full results under How we tested it."></canvas></div>
         </details>
+      </div>
+    </details>
+
+    <details id="external" class="layer">
+      <summary><h2>Does it hold up on a codebase it has never seen?</h2></summary>
+      <div class="layer-body">
+        <p class="note">The same four questions and setting, on <span data-fill="ext-total">—</span> changes built the same way
+          from <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a> (a large public-domain project with its own code and test
+          style), kept apart from the <span data-fill="fixtures">184</span> and not used to tune anything.
+          <span id="external-summary"></span></p>
+        <div class="scroll"><table class="results" id="external-table"><caption class="sr-only">Results on the yt-dlp changes</caption></table></div>
+        <p class="note"><strong>Our reading of the wrongly flagged clean changes</strong> (not relabelled): most get a high
+          scope-creep score because yt-dlp's one-line commit messages, such as "[ie/visir] Add extractor", don't mention the
+          shared helpers the same commit also changes. The rest are "Deprecate …" commits that move a function to another
+          file, which reads as duplicated code. Ranking mostly held up (0.82–0.99), but the 0.70 setting didn't transfer: at 0.80
+          it would wrongly flag 7% and still catch 79% (Jev without BAML). So a new codebase needs its own setting, or
+          commit messages that describe the whole change. The 0.70 setting is not retuned on this set.</p>
       </div>
     </details>
 
@@ -166,7 +183,9 @@
             sees; "…that nothing else in the diff uses?" took wrongly flagged clean changes from 6.7% to 0% on the same
             60-change set.</dd>
           <dt>Caveats</dt>
-          <dd>Flaws are mostly added on purpose. "Clean" labels come from rules plus one audit, not a manual review.</dd>
+          <dd>Flaws are mostly added on purpose. "Clean" labels come from rules plus one audit, not a manual review. On an
+            unfamiliar codebase (yt-dlp) the 0.70 setting wrongly flagged 23–30% of clean changes; see
+            <a href="#external">"Does it hold up on a codebase it has never seen?"</a></dd>
         </dl>
 
         <details class="sub" id="full-results">

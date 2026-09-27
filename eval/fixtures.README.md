@@ -68,6 +68,20 @@ those two sources now carry `single_use_abstraction: true`, and their real-diff 
 are renamed `bad-NN-single_use_abstraction-real-<sha>`.
 Totals: 59 good, and 30 / 37 / 30 / 32 bad for weakened_tests / single_use_abstraction
 / duplication / scope_creep.
+**Held-out set `fixtures-ytdlp.jsonl` (2026-09-27, 120 records, ids 101–130)**: built by
+`eval/fixtures_build.py /dev/null 30 101 ../yt-dlp=qte77/yt-dlp:yt_dlp,test` from the owner's
+local fork of yt-dlp (head `c7fb478d2`), read only. yt-dlp is released under the Unlicense (public
+domain, checked in its `LICENSE`); `bad-*` records are modified versions. yt-dlp's own
+`.NO_AI` policy forbids AI-made issues, PRs and comments; this set involves no contact with yt-dlp.
+It is kept apart from `fixtures.jsonl` and is never used to tune the 0.70 setting. What differs
+from the other repos: code lives in `yt_dlp/`, unittest tests in `test/`, so `weaken_test`
+also rewrites `self.assertEqual(A, B)` to `self.assertTrue(A)`; the clean filter
+(`may_weaken_tests`) also skips diffs that call `pytest.skip`, add an extractor test's `'skip'`
+or `'only_matching': True`, or remove more `_TESTS` URLs than they add. Spot check: all 30 good
+subjects read, and the four suspicious diffs opened; one (`ade8c2b`, "Skip flaky tests")
+really skipped tests via `pytest.skip(...)`, which led to that filter rule and a rebuild.
+Totals: 30 good, and 19 / 26 / 19 / 26 bad for weakened_tests / single_use_abstraction /
+duplication / scope_creep.
 **Limits**: "good" labels are manual spot-review for the original 60 and filter-based for the extension, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

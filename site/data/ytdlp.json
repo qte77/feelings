@@ -1,0 +1,244 @@
+{
+ "generated": "2026-09-27",
+ "questions": {
+  "scope_creep": "Does this change add functionality beyond what its commit message describes?",
+  "single_use_abstraction": "Does this change add a class, interface, helper function, or config parameter that nothing else in the diff uses?",
+  "duplication": "Does this change duplicate logic that already appears elsewhere in the same diff?",
+  "weakened_tests": "Does this change weaken, skip, or delete tests or assertions?"
+ },
+ "fixtures_total": 120,
+ "fixtures_scored": 120,
+ "runners": [
+  {
+   "name": "Jev, without BAML",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.8213993453355155,
+      "auc_post": 0.8236497545008183,
+      "agreement": 0.9416666666666667,
+      "mean_std": 0.013131184051400397,
+      "post_maybe_rate": 0.24166666666666667
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.851063829787234,
+      "auc_post": 0.8588379705400983,
+      "agreement": 0.975,
+      "mean_std": 0.010747941299389267,
+      "post_maybe_rate": 0.08333333333333333
+     },
+     "duplication": {
+      "auc_pre": 0.976029181865555,
+      "auc_post": 0.9765502866076081,
+      "agreement": 1.0,
+      "mean_std": 0.009104762624258595,
+      "post_maybe_rate": 0.06666666666666667
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9861907243355914,
+      "auc_post": 0.9921834288692027,
+      "agreement": 0.9833333333333333,
+      "mean_std": 0.005696890481654907,
+      "post_maybe_rate": 0.041666666666666664
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.3,
+     "catch_rate": 0.8888888888888888,
+     "n_good": 30,
+     "n_bad": 90
+    },
+    "zero_std_share": 0.1125,
+    "latency_ms": {
+     "p50": 231.03261799951724,
+     "p95": 284.4154790000175
+    },
+    "cost_usd": {
+     "total": 0.04641,
+     "per_call": 7.735e-05
+    },
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "scope_creep.agreement": false,
+    "scope_creep.mean_std": true,
+    "single_use_abstraction.auc_post": true,
+    "single_use_abstraction.agreement": true,
+    "single_use_abstraction.mean_std": true,
+    "duplication.auc_post": true,
+    "duplication.agreement": true,
+    "duplication.mean_std": true,
+    "weakened_tests.auc_post": true,
+    "weakened_tests.agreement": true,
+    "weakened_tests.mean_std": true,
+    "pre.false_reject_rate": false,
+    "latency.p95": true
+   },
+   "go": false,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.4666666666666667,
+     "catch_rate": 0.9444444444444444
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.4,
+     "catch_rate": 0.8888888888888888
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.36666666666666664,
+     "catch_rate": 0.8888888888888888
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.36666666666666664,
+     "catch_rate": 0.8888888888888888
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.3,
+     "catch_rate": 0.8888888888888888
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.13333333333333333,
+     "catch_rate": 0.8555555555555555
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.06666666666666667,
+     "catch_rate": 0.7888888888888889
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.03333333333333333,
+     "catch_rate": 0.6666666666666666
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.36666666666666664
+    }
+   ]
+  },
+  {
+   "name": "Jev, with BAML",
+   "summary": {
+    "concerns": {
+     "scope_creep": {
+      "auc_pre": 0.823240589198036,
+      "auc_post": 0.8289689034369886,
+      "agreement": 0.9416666666666667,
+      "mean_std": 0.012236334139462469,
+      "post_maybe_rate": 0.225
+     },
+     "single_use_abstraction": {
+      "auc_pre": 0.8449263502454992,
+      "auc_post": 0.8590425531914894,
+      "agreement": 0.9666666666666667,
+      "mean_std": 0.011543717467640721,
+      "post_maybe_rate": 0.075
+     },
+     "duplication": {
+      "auc_pre": 0.9762897342365816,
+      "auc_post": 0.9781136008337676,
+      "agreement": 0.9916666666666667,
+      "mean_std": 0.009712483558003271,
+      "post_maybe_rate": 0.08333333333333333
+     },
+     "weakened_tests": {
+      "auc_pre": 0.9942678478374153,
+      "auc_post": 0.9916623241271496,
+      "agreement": 1.0,
+      "mean_std": 0.005661481674835929,
+      "post_maybe_rate": 0.041666666666666664
+     }
+    },
+    "pre": {
+     "false_reject_rate": 0.23333333333333334,
+     "catch_rate": 0.8777777777777778,
+     "n_good": 30,
+     "n_bad": 90
+    },
+    "zero_std_share": 0.1125,
+    "latency_ms": null,
+    "cost_usd": null,
+    "errors": {
+     "count": 0,
+     "fixtures": [],
+     "kinds": {}
+    }
+   },
+   "checks": {
+    "scope_creep.auc_post": true,
+    "scope_creep.agreement": false,
+    "scope_creep.mean_std": true,
+    "single_use_abstraction.auc_post": true,
+    "single_use_abstraction.agreement": true,
+    "single_use_abstraction.mean_std": true,
+    "duplication.auc_post": true,
+    "duplication.agreement": true,
+    "duplication.mean_std": true,
+    "weakened_tests.auc_post": true,
+    "weakened_tests.agreement": true,
+    "weakened_tests.mean_std": true,
+    "pre.false_reject_rate": false
+   },
+   "go": false,
+   "sweep": [
+    {
+     "threshold": 0.5,
+     "false_reject_rate": 0.43333333333333335,
+     "catch_rate": 0.9333333333333333
+    },
+    {
+     "threshold": 0.55,
+     "false_reject_rate": 0.36666666666666664,
+     "catch_rate": 0.9
+    },
+    {
+     "threshold": 0.6,
+     "false_reject_rate": 0.36666666666666664,
+     "catch_rate": 0.8888888888888888
+    },
+    {
+     "threshold": 0.65,
+     "false_reject_rate": 0.3333333333333333,
+     "catch_rate": 0.8888888888888888
+    },
+    {
+     "threshold": 0.7,
+     "false_reject_rate": 0.23333333333333334,
+     "catch_rate": 0.8777777777777778
+    },
+    {
+     "threshold": 0.75,
+     "false_reject_rate": 0.16666666666666666,
+     "catch_rate": 0.8444444444444444
+    },
+    {
+     "threshold": 0.8,
+     "false_reject_rate": 0.06666666666666667,
+     "catch_rate": 0.8
+    },
+    {
+     "threshold": 0.85,
+     "false_reject_rate": 0.03333333333333333,
+     "catch_rate": 0.6888888888888889
+    },
+    {
+     "threshold": 0.9,
+     "false_reject_rate": 0.0,
+     "catch_rate": 0.3333333333333333
+    }
+   ]
+  }
+ ]
+}

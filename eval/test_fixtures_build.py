@@ -8,6 +8,8 @@ from fixtures_build import (
     add_unused_abstraction,
     added_by,
     leaks,
+    may_weaken_tests,
+    parse_repo,
     parses,
     select,
     weaken_test,
@@ -198,3 +200,113 @@ def test_no_mutation_leaks_its_own_label(seed):
         weaken_test(TEST_DIFF),
     ):
         assert leaks(out) == []
+
+
+# ---- Other layouts (row 25: yt-dlp keeps code in yt_dlp/ and unittest tests in test/) ----
+
+UNITTEST_DIFF = """diff --git a/test/test_utils.py b/test/test_utils.py
+index 5555555..6666666 100644
+--- a/test/test_utils.py
++++ b/test/test_utils.py
+@@ -20,3 +20,6 @@ class TestUtil(unittest.TestCase):
+
+     def test_existing(self):
+         self.assertTrue(True)
++
++    def test_parse_codecs(self):
++        self.assertEqual(parse_codecs('avc1'), {'vcodec': 'avc1'})
+"""
+
+YTDLP_DIFF = (
+    UNITTEST_DIFF
+    + """diff --git a/yt_dlp/utils/_utils.py b/yt_dlp/utils/_utils.py
+index 7777777..8888888 100644
+--- a/yt_dlp/utils/_utils.py
++++ b/yt_dlp/utils/_utils.py
+@@ -10,2 +10,4 @@ import re
+
+ def parse_codecs(codecs_str):
++    if not codecs_str:
++        return {}
+"""
+)
+
+
+def test_layout_fixtures_have_consistent_hunk_counts():
+    assert hunk_counts_match(UNITTEST_DIFF)
+    assert hunk_counts_match(YTDLP_DIFF)
+
+
+def test_weaken_test_turns_an_added_assert_equal_into_assert_true():
+    out = weaken_test(UNITTEST_DIFF)
+    assert "-        self.assertEqual(parse_codecs('avc1'), {'vcodec': 'avc1'})" in out
+    assert "+        self.assertTrue(parse_codecs('avc1'))\n" in out
+    assert hunk_counts_match(out)
+    assert leaks(out) == []
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "self.assertEqual(parse_codecs(''), {})",  # falsy expected value: assertTrue would invert it
+        "self.assertEqual(a, b, 'message')",  # three arguments: not the simple two-argument form
+        "self.assertEqual(",  # split over several lines
+    ],
+)
+def test_weaken_test_skips_assert_equal_forms_it_cannot_weaken_safely(line):
+    diff = UNITTEST_DIFF.replace("self.assertEqual(parse_codecs('avc1'), {'vcodec': 'avc1'})", line)
+    assert weaken_test(diff) is None
+
+
+@pytest.mark.parametrize("seed", [0, 1])
+def test_code_mutations_go_to_source_files_not_the_singular_test_dir(seed):
+    for out in (add_scope_creep(YTDLP_DIFF, seed), add_unused_abstraction(YTDLP_DIFF, seed)):
+        test_section = out[: out.index("diff --git a/yt_dlp/")]
+        assert "@@ -500,0" not in test_section  # nothing appended to the test file
+        new_paths = re.findall(r"^diff --git a/(\S+) b/\S+\nnew file mode", out, re.MULTILINE)
+        assert all(p.startswith("yt_dlp/") for p in new_paths)
+
+
+@pytest.mark.parametrize(
+    "diff_line",
+    [
+        "-    assert payload",
+        "+@pytest.mark.skip",
+        "+            pytest.skip('flaky')",  # the call form, as in yt-dlp's conftest.py (ade8c2b)
+        "-        self.assertEqual(a, b)",
+        "+        'skip': 'Geo-restricted',",
+        "+        'only_matching': True,",
+    ],
+)
+def test_may_weaken_tests_flags_real_diffs_that_already_weaken_a_test(diff_line):
+    assert may_weaken_tests(SRC_DIFF + diff_line + "\n")
+
+
+def test_may_weaken_tests_flags_a_removed_extractor_test_entry():
+    removed = "-    }, {\n-        'url': 'https://example.com/v/1',\n"
+    assert may_weaken_tests(SRC_DIFF + removed)
+    changed = removed + "+        'url': 'https://example.com/v/2',\n"
+    assert not may_weaken_tests(SRC_DIFF + changed)  # a changed URL is not a removed test
+
+
+def test_may_weaken_tests_passes_an_ordinary_diff():
+    assert not may_weaken_tests(SRC_DIFF)
+    assert not may_weaken_tests(YTDLP_DIFF)
+
+
+def test_mutations_handle_a_quoted_path_in_the_diff_header():
+    # git quotes paths with spaces or non-ASCII characters: diff --git "a/…" "b/…"
+    quoted = YTDLP_DIFF + (
+        'diff --git "a/test/testdata/caf\\303\\251.txt" "b/test/testdata/caf\\303\\251.txt"\n'
+        'new file mode 100644\n--- /dev/null\n+++ "b/test/testdata/caf\\303\\251.txt"\n@@ -0,0 +1 @@\n+x\n'
+    )
+    assert add_scope_creep(quoted, seed=1) is not None
+
+
+def test_parse_repo_reads_optional_source_and_test_dirs():
+    assert parse_repo("../yt-dlp=qte77/yt-dlp:yt_dlp,test") == ("../yt-dlp", "qte77/yt-dlp", ("yt_dlp", "test"))
+    assert parse_repo("../polyfetch-scrape=qte77/polyfetch-scrape") == (
+        "../polyfetch-scrape",
+        "qte77/polyfetch-scrape",
+        ("src", "tests"),
+    )

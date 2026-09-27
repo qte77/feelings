@@ -3,7 +3,9 @@
 # ///
 """Build labelled code-gate fixtures from public repos' history.
 
-    uv run eval/fixtures_build.py eval/fixtures.jsonl <n_sources> <first_index> <path>=<owner/repo> ... > new.jsonl
+    uv run eval/fixtures_build.py eval/fixtures.jsonl <n_sources> <first_index> <path>=<owner/repo>[:<dir>,…] ... > new.jsonl
+
+The optional dirs name where a repo keeps code and tests (default `src,tests`; yt-dlp: `yt_dlp,test`).
 
 Each source commit yields one good fixture (its real diff) and three bad fixtures made by
 mutating that same diff, so good and bad differ only by the problem. Commits already used
@@ -84,7 +86,8 @@ def _files(diff):
     out = []
     for i, s in enumerate(starts):
         end = starts[i + 1] if i + 1 < len(starts) else len(diff)
-        path = re.match(r"diff --git a/(\S+) b/", diff[s:]).group(1)
+        # Reason: git quotes paths with spaces or non-ASCII characters: diff --git "a/…" "b/…".
+        path = re.match(r'diff --git "?a/(.+?)"? "?b/', diff[s:]).group(1)
         out.append((path, s, end))
     return out
 
@@ -111,8 +114,17 @@ def _join(diff, extra):
     return diff + ("" if diff.endswith("\n") else "\n") + extra
 
 
+def _is_test(path):
+    """tests/… (pytest layout), test/… (yt-dlp's unittest layout) or a test_*.py file."""
+    return path.split("/", 1)[0] in ("test", "tests") or path.rsplit("/", 1)[-1].startswith("test_")
+
+
+def _code_files(diff):
+    return [p for p, _, _ in _files(diff) if p.endswith(".py") and not _is_test(p)]
+
+
 def _source_dir(diff):
-    paths = [p for p, _, _ in _files(diff) if p.endswith(".py") and not p.startswith("tests")]
+    paths = _code_files(diff)
     return paths[0].rsplit("/", 1)[0] if paths and "/" in paths[0] else "src"
 
 
@@ -124,22 +136,56 @@ def _balanced(text):
     return all(text.count(o) == text.count(c) for o, c in ("()", "[]", "{}"))
 
 
+def _args(text):
+    """Split call arguments at top-level commas, ignoring commas inside brackets or quotes."""
+    out, depth, quote, start = [], 0, None, 0
+    for i, ch in enumerate(text):
+        if quote:
+            quote = None if ch == quote and text[i - 1] != "\\" else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            out.append(text[start:i].strip())
+            start = i + 1
+    out.append(text[start:].strip())
+    return out
+
+
+def _weaker(line):
+    """The weaker replacement for one added assert line, or None when it can't be weakened safely.
+
+    `assert A == B` -> `assert A`; `self.assertEqual(A, B)` -> `self.assertTrue(A)`.
+    Reason: with a falsy B, dropping it inverts the test instead of weakening it.
+    """
+    m = re.match(r"^\+(\s*)assert (.+?) == (.+)$", line)
+    if m and m.group(3).strip() not in _FALSY and _balanced(m.group(2)):
+        return f"+{m.group(1)}assert {m.group(2)}"
+    m = re.match(r"^\+(\s*)self\.assertEqual\((.*)\)$", line)
+    if m and _balanced(m.group(2)):
+        args = _args(m.group(2))
+        if len(args) == 2 and args[1] not in _FALSY:
+            return f"+{m.group(1)}self.assertTrue({args[0]})"
+    return None
+
+
 def weaken_test(diff):
-    """Turn an added `assert A == B` into a visible `- assert A == B` / `+ assert A`."""
+    """Turn an added equality assert into a visible `-` original / `+` weaker pair."""
     lines = diff.splitlines(keepends=True)
     header = None
     for i, line in enumerate(lines):
         if _HUNK.match(line):
             header = i
-        m = re.match(r"^\+(\s*)assert (.+?) == (.+)$", line.rstrip("\n"))
-        # Reason: `assert A == <falsy>` -> `assert A` inverts the test instead of weakening it.
-        if m and header is not None and m.group(3).strip() not in _FALSY and _balanced(m.group(2)):
-            indent, left = m.group(1), m.group(2)
+        weaker = _weaker(line.rstrip("\n"))
+        if weaker and header is not None:
             h = _HUNK.match(lines[header])
             old_start, old_n, new_start, new_n, tail = h.groups()
             old_n = int(old_n or 1) + 1
             lines[header] = f"@@ -{old_start},{old_n} +{new_start},{new_n or 1} @@{tail}\n"
-            lines[i] = f"-{line[1:]}" + ("" if line.endswith("\n") else "\n") + f"+{indent}assert {left}\n"
+            lines[i] = f"-{line[1:]}" + ("" if line.endswith("\n") else "\n") + f"{weaker}\n"
             return "".join(lines)
     return None
 
@@ -223,7 +269,7 @@ def add_scope_creep(diff, seed):
     name, args, body = option
     func = [f"def {name}({', '.join(args)}):", *body]
     if seed % 2 == 0:
-        src = [p for p, _, _ in _files(diff) if p.endswith(".py") and not p.startswith("tests")]
+        src = _code_files(diff)
         if src:
             return _append_hunk(diff, src[0], ["", *func])
     return _join(diff, _new_file(f"{_source_dir(diff)}/{name}.py", func))
@@ -303,6 +349,29 @@ def select(pool, counts, n_sources):
     return picked
 
 
+_WEAKENING = re.compile(
+    r"^-\s*(assert |self\.assert)"  # an existing assert removed
+    r"|^\+.*(pytest\.(mark\.)?skip|unittest\.skip)"  # a test skipped (decorator or call)
+    r"|^\+\s*['\"](skip['\"]\s*:|only_matching['\"]\s*:\s*True)",  # yt-dlp: an extractor test skipped
+    re.MULTILINE,
+)
+_TEST_URL = re.compile(r"^([-+])\s*['\"]url['\"]\s*:", re.MULTILINE)
+
+
+def may_weaken_tests(diff):
+    """True when a real diff may already weaken a test, so it can't serve as a clean example."""
+    urls = Counter(m.group(1) for m in _TEST_URL.finditer(diff))
+    # Reason: more removed than added extractor-test URLs means a _TESTS entry was deleted.
+    return bool(_WEAKENING.search(diff)) or urls["-"] > urls["+"]
+
+
+def parse_repo(spec):
+    """`<path>=<owner/repo>[:<dir>,<dir>…]` -> (path, slug, dirs); dirs default to src and tests."""
+    path, rest = spec.split("=", 1)
+    slug, _, dirs = rest.partition(":")
+    return path, slug, tuple(dirs.split(",")) if dirs else ("src", "tests")
+
+
 def leaks(diff):
     """Leak words found in added lines only (removed lines are the author's, not ours)."""
     added = " ".join(
@@ -321,27 +390,27 @@ def _git(repo, *args):
     return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, check=True).stdout  # noqa: S603, S607
 
 
-def candidates(repo):
-    """(sha, message, diff) for real src/tests commits of a usable size, newest first."""
-    for sha in _git(repo, "rev-list", "--no-merges", "HEAD", "--", "src", "tests").split():
+def candidates(repo, dirs=("src", "tests")):
+    """(sha, message, diff) for real commits under `dirs` of a usable size, newest first."""
+    for sha in _git(repo, "rev-list", "--no-merges", "HEAD", "--", *dirs).split():
         message = _git(repo, "log", "-1", "--format=%B", sha).strip()
         if _SKIP_MESSAGE.search(message.splitlines()[0]):
             continue
-        diff = _git(repo, "show", "--format=", "--patch", sha, "--", "src", "tests")
+        diff = _git(repo, "show", "--format=", "--patch", sha, "--", *dirs)
         # Skip commits whose real diff may already weaken tests, so "good" stays good.
-        if not 400 <= len(diff) <= 12000 or re.search(r"^-\s*assert |^\+.*pytest\.mark\.skip", diff, re.MULTILINE):
+        if not 400 <= len(diff) <= 12000 or may_weaken_tests(diff):
             continue
         yield sha, message, diff
 
 
 def build(repos, existing, n_sources, first_index):
-    """repos: [(path, slug)]; existing: current fixtures (their shas are skipped, their counts kept)."""
+    """repos: [(path, slug, dirs)]; existing: current fixtures (their shas are skipped, their counts kept)."""
     used_shas = {f["source_sha"] for f in existing}
     counts = Counter({c: 0 for c in CONCERN_NAMES})
     counts.update(c for f in existing for c, bad in f["expect"].items() if bad)
     pool = []
-    for path, slug in repos:
-        for sha, message, diff in candidates(path):
+    for path, slug, dirs in repos:
+        for sha, message, diff in candidates(path, dirs):
             if sha in used_shas:
                 continue
             options = {}
@@ -367,8 +436,7 @@ def main():
     existing_path, n_sources, first_index, *repos = sys.argv[1:]
     with open(existing_path, encoding="utf-8") as f:
         existing = [json.loads(line) for line in f if line.strip()]
-    pairs = [tuple(r.split("=", 1)) for r in repos]
-    for record in build(pairs, existing, int(n_sources), int(first_index)):
+    for record in build([parse_repo(r) for r in repos], existing, int(n_sources), int(first_index)):
         print(json.dumps(record))
 
 

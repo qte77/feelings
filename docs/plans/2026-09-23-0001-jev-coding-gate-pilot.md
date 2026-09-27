@@ -5,7 +5,9 @@
 ### Start here (handoff, 2026-09-26)
 
 - **State:** `main` is clean.
-  - #1–#28 are merged on the fork `qte77/feelings`; release `v0.5.1`.
+  - #1–#29 are merged on the fork `qte77/feelings`; release `v0.5.2`.
+  - Strictness slider: a lower setting flags more, so the low end is labelled "strict"
+    (#29); `scripts/check_site.py` checks the label order.
   - The page is layered (#12): details sit behind `#compare`, `#alternatives`, `#strictness`
     and `#method`.
   - Page wording: the two groups of test changes are **clean** and **flawed**, defined in

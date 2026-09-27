@@ -121,6 +121,13 @@ with sync_playwright() as p:
                 setting == "0.50" and after != before,
                 f"{where}: slider {setting} {before!r} -> {after!r}",
             )
+            # The low end flags more, so it must carry the "strict" label.
+            ends = page.locator(".slider > span").all_inner_texts()
+            flags = [int(v.split("%")[0]) for v in (before, after)]
+            expect(
+                ends == ["strict", "lenient"] and flags[1] >= flags[0],
+                f"{where}: slider ends {ends}, wrongly flags {flags}",
+            )
 
             overflow = page.evaluate(
                 "document.documentElement.scrollWidth > window.innerWidth"

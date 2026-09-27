@@ -5,7 +5,7 @@
 ### Start here (handoff, 2026-09-26)
 
 - **State:** `main` is clean.
-  - #1–#29 are merged on the fork `qte77/feelings`; release `v0.5.2`.
+  - #1–#31 are merged on the fork `qte77/feelings`; release `v0.5.3`.
   - Strictness slider: a lower setting flags more, so the low end is labelled "strict"
     (#29); `scripts/check_site.py` checks the label order.
   - The page is layered (#12): details sit behind `#compare`, `#alternatives`, `#strictness`
@@ -20,10 +20,11 @@
     bar on 184 fixtures.
   - The pilot, "Answers" below.
 - **Next, in order:** the "Remaining work" table.
-  - Agent-runnable now, in this order: row 23 (PR-AUC, Brier), row 22 (Laya, issue #24),
-    row 19 (example browser), row 9 (harness runners; ask for any missing logins), row 20.
-  - Owner-gated: rows 24 (local pre-push check, yes/no), 18, 16 and 17; row 12 waits on
-    the BoundaryML maintainers.
+  - Agent-runnable now, in this order: row 25 (yt-dlp held-out set), row 23 (PR-AUC,
+    Brier), row 22 (Laya, issue #24), row 19 (example browser), row 9 (harness runners;
+    ask for any missing logins), row 20.
+  - Owner-gated: rows 26 (which ai-agents-research issues to file), 24 (local pre-push
+    check, yes/no), 18, 16 and 17; row 12 waits on the BoundaryML maintainers.
 - **How to work:**
   - Commands are in "Commands"; code locations in "Source map".
   - Rules: one topic branch per change, TDD for Python, and the full gate before any
@@ -462,6 +463,38 @@ Each becomes a row in the next arc if the result is "go".
 - **Decision (default):** harness runners live in `feelings/eval/`, next to the fixtures,
   metrics and JSONL contract. `coding-harness-eval` solves a different problem.
 
+### Jev in practice: talk notes checked against the docs (2026-09-27)
+
+The owner shared notes from a talk with Vaibhav (BoundaryML) and Dex. Summarised, and
+checked against docs.typesafe.ai `/api` and `/models` on 2026-09-27:
+
+- **Verified in the docs:**
+  - There are three question types:
+    - noul: the probability of "yes";
+    - choice: the picked option plus the full distribution;
+    - score: a probability-weighted value across your rubric levels.
+  - Only choice and score carry a `confidence`; noul doesn't, which matches this plan.
+  - Output tokens are free; input costs $0.042 per million tokens.
+  - Limits: 32k tokens for the state plus the longest question, 64k per request.
+- **Their claims, not verified here:**
+  - Jev "emits one token": the docs don't describe the mechanism.
+  - About 255 options per choice.
+  - Rippling saw 90% accuracy against a 50% LLM baseline, 8× faster.
+  - Dex's code-search harness capped each step at about 80 files.
+- **How this pilot matches the advice:**
+  - "Run your existing eval against Jev and compare cost and latency": the pilot did
+    exactly this against three Claude models, and found about 70× faster and about 80×
+    cheaper than Haiku.
+  - "Build for the times it's wrong": the check never blocks, uncertain answers pass,
+    and a firewall block is its own outcome.
+  - "Get the harness and evals right, swap implementations later": the eval is already
+    provider-neutral (Claude and Jev share the JSONL format), and Laya (row 22) is the
+    swap test.
+  - Not used yet: choice and score. The pilot asks noul questions only. That's a fact,
+    not a gap to fill now.
+- **Page:** it now says output tokens are free, citing typesafe.ai's models page. It no
+  longer says "no output price is published".
+
 ## Remaining work
 
 | # | Item | Gate | Done when |
@@ -475,4 +508,6 @@ Each becomes a row in the next arc if the result is "go".
 | 20 | Suspected bug in analyze-stock-kpi, found while reading it on 2026-09-25 and **not verified**: `ui/app.js:689` parses URL state with the fallback universe list before `populateUniversePicker` (l.700) loads `universes.json`, so deep links to universes outside that list may be dropped. | agent verifies with a headless deep-link test; owner approves the issue or PR in that repo | Reproduced (or disproved) with a URL; an issue or fix PR opened there only after approval |
 | 22 | Tracked in **qte77/feelings#24** (issues enabled on the fork 2026-09-25). Measure **Laya** (github.com/NandhaKishorM/laya, Apache-2.0, open weights, self-host only, CPU 193–464 ms/question per its README) on the same 184 fixtures and questions. **Free routes (research 2026-09-25, subagent, sources in the chat log):** (a) a **manual GitHub Actions batch run** on this public repo: free, 4 vCPU/16 GB, 6 h/job, weights cached, Laya run in-process, results as an artifact. It works for evaluating this project, but **not as an always-on server**: GitHub's terms bar "part of a serverless application" and activity "unrelated to" the repo. (b) Your own **HF ZeroGPU Space**: free, 5 GPU-min/day, Gradio wrapper needed. (c) **Modal**: $30/mo credit, but a card is needed. (d) Local, blocked by disk. No hosted API exists, and HF Inference Providers and LLM-catalogue providers (Cerebras, Groq, Cloudflare Workers AI and others) can't serve it. | agent: the owner chose route (a), a **manual** GitHub Actions eval (issue #24, 2026-09-25); open choices in #24: k=1 or k=5, and the English or multilingual checkpoint (default: English, k=5) | `eval/run-laya-184.jsonl` exported next to Jev and Claude; the page's alternatives section says pro or con from measured numbers |
 | 23 | Add **PR-AUC** (rare-class precision: 30–37 positives against 147–154 negatives per question) and the **Brier score** (calibration; the check acts on a fixed 0.70) to `summarize()`, written test-first. Show them in "How we tested it" next to ROC-AUC. No new runs: the existing run files suffice. | agent | Tests written first; values for all 5 setups in `results.json`; the page's "Why ROC-AUC" note updated |
+| 25 | **Held-out external codebase: yt-dlp** (owner, 2026-09-27). The local fork `../yt-dlp` (`qte77/yt-dlp`) is used as a source only. There's **no contact with its upstream**: its `.NO_AI/README.md` forbids AI-made issues, PRs and comments, and the owner doesn't want to PR there. Licence: the Unlicense (public domain), so fixtures may be committed; name it in `eval/fixtures.README.md`. The question is whether Jev generalizes to an unfamiliar codebase and style. Fit, measured on its last 600 `yt_dlp/`/`test/` commits: 555 are 400–12000 chars; 145 add a function; only 5 add an `assert … ==` and 16 a `self.assertEqual(`; 70 add or remove a `_TESTS` `'skip'`/`'only_matching'` line. **Defaults:** (1) the builder takes per-repo source and test dirs from the CLI spec (`../yt-dlp=qte77/yt-dlp:yt_dlp,test`); the default stays `src`/`tests`; (2) `weaken_test` also rewrites `self.assertEqual(A, B)` to `self.assertTrue(A)`, with the same truthy-right-side guard; (3) the clean filter also skips diffs that add `'skip'` or remove a `_TESTS` entry, then 10 clean candidates get a spot check; (4) a **separate file** `eval/fixtures-ytdlp.jsonl` of about 30 sources (about 120 records), not pooled into the 184, with 0.70 not retuned on it; (5) both Jev runners at k=5, a few cents; (6) a Claude run on it only after the owner says yes. If weakened_tests stays scarce, say so and accept an unbalanced set. | agent (Claude runs: owner) | Builder changes test-first; `eval/fixtures-ytdlp.jsonl` with provenance; both Jev runs scored; the page shows yt-dlp as its own section next to the 184 |
+| 26 | **Share the research with `qte77/ai-agents-research`.** A read-only search (2026-09-27) found nothing there on Jev/TypeSafe, BAML `feelings`, abide, jev-ultrafast, Laya or probably, and no issues. The nearest pages: `docs/sdlc-lcm/agentic-sdlc-patterns.md:91` ("Code review … Gap: no review agent"), the one BAML bullet in `docs/non-cc/frameworks/agent-frameworks-infrastructure-landscape.md:182` (§8 Output Validation), `docs/non-cc/infrastructure/code-review-products-landscape.md` and `docs/cc-community/CC-harnessrouter-analysis.md` (already covers HarnessRouter). **Pre-staged issues** (that repo has no template; recent issues use a `docs:` title, the `documentation` label, and Context / Problem / Proposed / Refs sections): (a) `docs: Jev (TypeSafe) — system-one classifier as a pre-CI code-change gate (feelings pilot results)`: a new analysis page with status Trial, filling the "no review agent" gap; (b) `docs: extend §8 Output Validation with BAML feelings (.feels/.fill) and probability-returning classifiers`; (c) `docs: Jev ecosystem — abide, jev-ultrafast, laya, probably (scout batch)`. | owner: which of (a)–(c) to file | The chosen issues filed in `qte77/ai-agents-research`, linked here |
 | 24 | **Local Jev check before CI** (proposed 2026-09-25): a small `scripts/jev_check.py` reusing `eval/jev_gate.check()` and `eval/concerns.py`, run by an opt-in, **non-blocking** git `pre-push` hook on the outgoing diff. It prints the four probabilities and a "worth a closer look" note at ≥ 0.70, and exits 0 even on an API error or a firewall block. About $0.0001 and 0.3 s per push; it needs `TYPESAFE_API_KEY` locally, which is already in `.env`. | owner: yes/no | Hook installed with one command and documented; tested first with a fake transport; a log of real pushes to compare later with review findings |

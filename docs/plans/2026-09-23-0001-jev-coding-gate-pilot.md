@@ -32,6 +32,8 @@
   - Squash-merge once green, delete the branches, and strike the plan row in the same PR.
 - **Watch-outs:** the list further down. Most often hit:
   - Always pass `-R qte77/feelings`, or `gh` targets upstream.
+  - Run `gh` and `git push` as `env -u GH_TOKEN -u GITHUB_TOKEN …`: the env tokens are
+    stale (HTTP 401); the stored login works.
   - Commit signing can time out: retry, never disable it.
   - Some other clones set `commit.gpgsign=false`: supersede with `cherry-pick -S`.
   - BAML needs `. ~/.baml/env` and `BAML_AGENT_SKILL_CHECK=off`.
@@ -307,9 +309,9 @@ baml run eval_gate < eval/fixtures.jsonl > eval/run-baml.jsonl
 uv run eval/metrics.py eval/run-python.jsonl eval/fixtures.jsonl
 uv run eval/metrics.py eval/run-baml.jsonl eval/fixtures.jsonl
 # Claude baseline through the logged-in session (no key): [k] [model] [workers]; recorded runs used k=1
-uv run eval/claude_gate.py 1 haiku 8 < eval/fixtures.jsonl > eval/run-claude-haiku.jsonl
-uv run eval/claude_gate.py 1 claude-sonnet-5 8 < eval/fixtures.jsonl > eval/run-claude-claude-sonnet-5.jsonl
-uv run eval/claude_gate.py 1 claude-opus-5-5 8 < eval/fixtures.jsonl > eval/run-claude-claude-opus-5-5.jsonl
+uv run eval/claude_gate.py 1 haiku 8 < eval/fixtures.jsonl > eval/run-claude-haiku-184.jsonl
+uv run eval/claude_gate.py 1 claude-sonnet-5 8 < eval/fixtures.jsonl > eval/run-claude-claude-sonnet-5-184.jsonl
+uv run eval/claude_gate.py 1 claude-opus-5-5 8 < eval/fixtures.jsonl > eval/run-claude-claude-opus-5-5-184.jsonl
 # end-to-end time for one check (start-up included), 10 runs each, on good-14 (the fixture timed on 2026-09-23)
 grep '"id": "good-14' eval/fixtures.jsonl > eval/one.jsonl
 for i in $(seq 10); do /usr/bin/time -f %e uv run eval/jev_gate.py 1 < eval/one.jsonl > /dev/null; done
@@ -319,12 +321,18 @@ uv run eval/fixtures_build.py eval/fixtures.jsonl 31 31 \
   ../polyfetch-scrape=qte77/polyfetch-scrape ../Agents-eval=qte77/Agents-eval \
   ../doc-pipeline-engine=qte77/doc-pipeline-engine ../analyze-stock-kpi=qte77/analyze-stock-kpi > new.jsonl
 # results page data (committed; CI can't run evals). The deploy runs on push to main.
-# Sized eval (both Jev runners on all 184); the 2026-09-24 pilot is frozen in site/data/pilot-2026-09-24.json.
+# Sized eval: all 5 setups on all 184; the 2026-09-24 pilot is frozen in site/data/pilot-2026-09-24.json.
+# The names are the page's setup labels (site/app.js matches "Jev, without BAML" and the "Jev" prefix).
 uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl \
-  "Jev, without BAML=eval/run-python-184.jsonl" "Jev, with BAML=eval/run-baml-184.jsonl"
-# Don't export Claude's 60-fixture runs alongside: export() keeps only fixtures every run answered.
+  "Jev, without BAML=eval/run-python-184.jsonl" "Jev, with BAML=eval/run-baml-184.jsonl" \
+  "Claude Haiku 4.5=eval/run-claude-haiku-184.jsonl" \
+  "Claude Sonnet 5=eval/run-claude-claude-sonnet-5-184.jsonl" \
+  "Claude Opus 5.5=eval/run-claude-claude-opus-5-5-184.jsonl"
+# Export only runs on the same fixtures: export() keeps only fixtures every run answered.
 python3 -m http.server 8137 --directory site   # preview at http://localhost:8137/
-uv run --directory ../polyfetch-scrape python ../feelings/scripts/check_site.py <out_dir> [url]  # e2e page check
+# e2e page check; after an environment reset first run: uv run --directory ../polyfetch-scrape patchright install chromium --only-shell
+uv run --directory ../polyfetch-scrape python ../feelings/scripts/check_site.py <out_dir> [url]
+# gh and git push: prefix with env -u GH_TOKEN -u GITHUB_TOKEN (the env tokens are stale: HTTP 401)
 # release: tag the merge commit (full sha), then redeploy from main so the footer shows the tag
 gh release create vX.Y.Z -R qte77/feelings --target <full-sha> --notes-file notes.md
 gh workflow run gh-pages.yaml -R qte77/feelings --ref main   # the Pages env only allows main
@@ -411,7 +419,7 @@ Each becomes a row in the next arc if the result is "go".
 |---|---|
 | Metrics + pass bars | `eval/metrics.py` (`summarize`, `post_decision`, `verdict`, `BARS`, `score`, `error_summary`, `export`: several runs → strict JSON, NaN → null, every runner scored on the fixtures all runs answered, `fixtures_scored` next to `fixtures_total`, errors from each full run, plus a per-runner `sweep`; `sweep()`: false rejects and catch per threshold 0.50–0.90 on the first answer); tests `eval/test_metrics.py` |
 | Fixture builder | `eval/fixtures_build.py`: mutations `weaken_test` (top-level `==` with a truthy right side only), `add_unused_abstraction`, `add_duplication` (whole function, multi-line signatures), `add_scope_creep` (in-file / new file alternating); `_free` avoids names the diff already uses; `added_by`, `leaks`, `parses` guard every record; `select` serves the scarcest concern; `build`/`candidates` walk git. Tests `eval/test_fixtures_build.py`. Provenance and the good-label audit: `eval/fixtures.README.md` |
-| Page check (e2e) | `scripts/check_site.py`, run with polyfetch-scrape's patchright: light/dark × desktop/phone. It asserts the verdict, 3 tiles and 4 ratings; every `<details>` closed on load; all charts drawn once opened; table row counts; the slider updating; deep links (`#strictness`, and nested `#compare-chart` opening its parent); no sideways scroll with everything open. It fails on console/page errors or failed requests. If patchright is updated, run `patchright install chromium` once |
+| Page check (e2e) | `scripts/check_site.py`, run with polyfetch-scrape's patchright: light/dark × desktop/phone. It asserts the verdict, 3 tiles and 4 ratings; every `<details>` closed on load; all charts drawn once opened; table row counts; the slider updating; deep links (`#strictness`, and nested `#compare-chart` opening its parent); no sideways scroll with everything open. It fails on console/page errors or failed requests. If patchright is updated or the environment is reset, run `patchright install chromium --only-shell` once. It also checks the strictness slider's label order and fails on the undefined terms "problem change", "good change" and "good from bad" |
 | Results page | `site/index.html`: Layer 0 answer (`#verdict`, `#tiles`), Layer 1 `#ratings`, and `<details>` `#compare` (nested `#compare-chart`), `#alternatives`, `#strictness`, `#method` (nested `#full-results`, `#pilot-chart`, `#pilot-results`, `#threshold-table`). `site/app.js`: `answer`, `ratings`, `compare`, `strictness`, `resultsTable`, `sweepTable`, `dotChart` via `drawWhenOpened` (Chart.js can't draw into a closed `<details>`), `openFromHash`; `RATINGS`/`HEADLINE`/`CURRENT_THRESHOLD` per "Decisions". CSS triangles for disclosure markers. Data: `site/style.css`, `site/data/results.json` (sized eval: both Jev runners and three Claude models on 184), `site/data/pilot-2026-09-24.json` (frozen 5-runner pilot on 60); copied in: `site/eyerest.css`, `a11y.css`, `theme.js`, `chart-theme.js` from `qte77/brand/ui-kit`, `site/favicon.svg` = `qte77/brand/images/logo-mark.paths.dejavu.svg` (byte-identical to analyze-stock-kpi's; linked relatively because the site lives under `/feelings/`), `site/vendor/chart.umd.min.js` (Chart.js v4.5.1) from `analyze-stock-kpi`; deploy `.github/workflows/gh-pages.yaml` (pins from `analyze-stock-kpi`). Chart colours: Jev = `--primary`, Claude = `--text-muted` at 55% alpha; the categorical validator doesn't apply to emphasis, but primary vs grey separate by ΔE 22.6 (light) / 27.5 (dark) |
 | Python runner | `eval/jev_gate.py` (`MODEL`, `INPUT_USD_PER_M` with its source, `check` → answers + usage, `cost_usd`, `run`, which writes `input_tokens`/`output_tokens`/`cost_usd` per record, records `TypeSafeAPIError` as an `error` record and skips remaining repeats); questions/state come from `eval/concerns.py`; tests `eval/test_jev_gate.py` |
 | Shared questions + state | `eval/concerns.py` (`CONCERNS`, `state_for`) |

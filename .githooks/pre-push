@@ -1,0 +1,19 @@
+#!/bin/sh
+# Local, non-blocking Jev check of what is being pushed (plan row 24). Enable once with
+#   git config core.hooksPath .githooks
+# It prints four probabilities and never fails the push. Skip one push with JEV_CHECK=off.
+[ "$JEV_CHECK" = "off" ] && exit 0
+cd "$(git rev-parse --show-toplevel)" || exit 0
+# shellcheck disable=SC1091  # .env is the user's own, gitignored file
+if [ -f .env ]; then set -a; . ./.env; set +a; fi
+zero=0000000000000000000000000000000000000000
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue  # a branch deletion: nothing to check
+  if [ "$remote_sha" = "$zero" ]; then
+    base=$(git merge-base origin/main "$local_sha" 2>/dev/null) || continue  # a new branch: compare with main
+  else
+    base=$remote_sha
+  fi
+  uv run --quiet eval/jev_check.py "$base..$local_sha" || true
+done
+exit 0

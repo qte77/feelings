@@ -16,8 +16,8 @@ from typesafe_sdk import Noul, TypeSafeAPIError, TypeSafeClient
 from concerns import CONCERNS, state_for
 
 MODEL = "jev-1.13.0"
-# typesafe.ai homepage: "$42 Per Billion input tokens" (checked 2026-09-24). No output price is
-# published, so cost_usd covers input tokens only.
+# typesafe.ai homepage: "$42 Per Billion input tokens" (checked 2026-09-24); docs.typesafe.ai/models
+# says output tokens are free (checked 2026-09-27), so cost_usd covers input tokens only.
 INPUT_USD_PER_M = 0.042
 
 

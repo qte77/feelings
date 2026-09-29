@@ -11,7 +11,9 @@ Variant mode strips a fixture-building cue from every bad-* record of an existin
 (good-* records pass through unchanged), for checking whether a check is reading the cue rather
 than the flaw:
 
-    uv run eval/fixtures_build.py --variant headers|inline <fixtures.jsonl> > variant.jsonl
+    uv run eval/fixtures_build.py --variant headers|inline|settle <fixtures.jsonl> > variant.jsonl
+
+`settle` (plan 0002, P5) is what every build now applies: no new-file cue, realistic headers.
 
 Each source commit yields one good fixture (its real diff) and three bad fixtures made by
 mutating that same diff, so good and bad differ only by the problem. Commits already used
@@ -366,10 +368,27 @@ def add_scope_creep(diff, seed):
     return _join(diff, _new_file(f"{_source_dir(diff)}/{name}.py", func))
 
 
+def settle(diff):
+    """Remove the fixture-building cues P2 found (plan 0002): move a mutation-added new file into
+    an existing source file, and give every appended hunk a realistic header. A diff with no
+    non-test source file keeps its new file (the only place the addition can go)."""
+    return realistic_headers(inline_new_files(diff))
+
+
+def _settled(mutate):
+    def run(diff, seed):
+        mutated = mutate(diff, seed)
+        return None if mutated is None else settle(mutated)
+
+    return run
+
+
+# Reason: every build goes through settle(), so new fixtures never carry the new-file or
+# fixed-header cue that let Jev score the shape instead of the flaw (P2, #40).
 MUTATIONS = {
-    "scope_creep": add_scope_creep,
-    "single_use_abstraction": add_unused_abstraction,
-    "duplication": add_duplication,
+    "scope_creep": _settled(add_scope_creep),
+    "single_use_abstraction": _settled(add_unused_abstraction),
+    "duplication": _settled(add_duplication),
     "weakened_tests": lambda diff, seed: weaken_test(diff),
 }
 
@@ -523,7 +542,7 @@ def build(repos, existing, n_sources, first_index):
     return records
 
 
-VARIANTS = {"headers": realistic_headers, "inline": inline_new_files}
+VARIANTS = {"headers": realistic_headers, "inline": inline_new_files, "settle": settle}
 
 
 def build_variant(records, transform):

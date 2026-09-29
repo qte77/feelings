@@ -3,14 +3,18 @@ import re
 import pytest
 
 from fixtures_build import (
+    CONCERN_NAMES,
     add_duplication,
     add_scope_creep,
     add_unused_abstraction,
     added_by,
+    build_variant,
+    inline_new_files,
     leaks,
     may_weaken_tests,
     parse_repo,
     parses,
+    realistic_headers,
     select,
     weaken_test,
 )
@@ -310,3 +314,103 @@ def test_parse_repo_reads_optional_source_and_test_dirs():
         "qte77/polyfetch-scrape",
         ("src", "tests"),
     )
+
+
+# ---- P2: is Jev reading cues from how the flawed fixtures were built? ----
+
+
+def test_realistic_headers_rewrites_a_synthetic_hunk_to_continue_after_the_last_real_hunk():
+    mutated = add_duplication(SRC_DIFF, seed=0)
+    out = realistic_headers(mutated)
+    assert "@@ -500,0 +501," not in out
+    assert hunk_counts_match(out)
+    # only the header numbers move; the added content is untouched
+    assert added_by(SRC_DIFF, out) == added_by(SRC_DIFF, mutated)
+
+
+def test_realistic_headers_places_the_synthetic_hunk_strictly_after_the_real_one():
+    mutated = add_duplication(SRC_DIFF, seed=0)
+    out = realistic_headers(mutated)
+    real = re.search(r"@@ -(\d+),(\d+) \+(\d+),(\d+) @@", SRC_DIFF)
+    old_start, old_n = int(real.group(1)), int(real.group(2))
+    new_header = re.search(r"@@ -(\d+),0 \+(\d+),\d+ @@", out)
+    assert new_header is not None
+    assert int(new_header.group(1)) > old_start + old_n  # a gap, not adjacent
+
+
+def test_realistic_headers_leaves_a_diff_without_a_synthetic_hunk_unchanged():
+    assert realistic_headers(SRC_DIFF) == SRC_DIFF
+    assert realistic_headers(weaken_test(TEST_DIFF)) == weaken_test(TEST_DIFF)
+
+
+def test_realistic_headers_leaves_a_section_with_no_real_hunk_unchanged():
+    orphan = (
+        "diff --git a/src/pkg/new_thing.py b/src/pkg/new_thing.py\n"
+        "new file mode 100644\nindex 0000000..1111111 100644\n"
+        "--- /dev/null\n+++ b/src/pkg/new_thing.py\n"
+        "@@ -500,0 +501,2 @@\n+def x():\n+    pass\n"
+    )
+    assert realistic_headers(orphan) == orphan
+
+
+def test_inline_new_files_moves_an_added_files_lines_into_an_existing_source_section():
+    mutated = add_unused_abstraction(SRC_DIFF, seed=0)
+    cls = re.search(r"class (_\w+):", mutated).group(1)
+    out = inline_new_files(mutated)
+    assert "new file mode" not in out
+    assert "@@ -500,0 +501," not in out  # realistic_headers applied in turn
+    assert hunk_counts_match(out)
+    assert parses(SRC_DIFF, out)
+    assert leaks(added_by(SRC_DIFF, out)) == []
+    assert cls in out
+
+
+def test_inline_new_files_leaves_the_diff_unchanged_without_a_target_file():
+    # TEST_DIFF's only file is a test file, so the new file has nowhere to be inlined into.
+    mutated = add_unused_abstraction(TEST_DIFF, seed=0)
+    assert inline_new_files(mutated) == mutated
+
+
+def test_inline_new_files_leaves_a_diff_without_a_new_file_section_unchanged():
+    mutated = add_duplication(SRC_DIFF, seed=0)  # appends a hunk, adds no new file
+    assert inline_new_files(mutated) == mutated
+
+
+# A real commit can add a file of its own (e.g. an extracted helper module); that section has a
+# real after-hash, `index 0000000..b58b9a6` not `..0000000`, and must not be mistaken for the
+# mutation's own synthetic one.
+_REAL_NEW_FILE_DIFF = (
+    "diff --git a/src/pkg/_shared.py b/src/pkg/_shared.py\nnew file mode 100644\n"
+    "index 0000000..b58b9a6\n--- /dev/null\n+++ b/src/pkg/_shared.py\n"
+    "@@ -0,0 +1,2 @@\n+def helper():\n+    return 1\n"
+) + SRC_DIFF
+
+
+def test_inline_new_files_leaves_a_real_new_file_section_alone_and_moves_only_the_synthetic_one():
+    mutated = add_unused_abstraction(_REAL_NEW_FILE_DIFF, seed=0)
+    assert mutated.count("new file mode") == 2  # the real one, plus the mutation's
+    out = inline_new_files(mutated)
+    assert out.count("new file mode") == 1  # only the real section remains
+    assert "index 0000000..b58b9a6" in out  # the real one, untouched
+    assert "index 0000000..0000000" not in out  # the synthetic one, inlined away
+    assert hunk_counts_match(out)
+    assert parses(_REAL_NEW_FILE_DIFF, out)
+
+
+def test_inline_new_files_leaves_a_diff_with_only_a_real_new_file_section_unchanged():
+    mutated = add_duplication(_REAL_NEW_FILE_DIFF, seed=0)  # no synthetic new-file section
+    assert inline_new_files(mutated) == mutated
+
+
+def test_build_variant_transforms_only_bad_records_and_counts_each_outcome():
+    records = [
+        {"id": "good-01-abc1234", "diff": SRC_DIFF, "expect": dict.fromkeys(CONCERN_NAMES, False)},
+        {"id": "bad-01-duplication-abc1234", "diff": add_duplication(SRC_DIFF, seed=0), "expect": {}},
+        {"id": "bad-01-weakened_tests-abc1234", "diff": TEST_DIFF, "expect": {}},  # no synthetic hunk to fix
+    ]
+    out, changed, unchanged = build_variant(records, realistic_headers)
+    assert out[0]["diff"] == SRC_DIFF  # good record untouched
+    assert "@@ -500,0 +501," not in out[1]["diff"]
+    assert out[2]["diff"] == TEST_DIFF  # nothing to change
+    assert changed == 1
+    assert unchanged == 1

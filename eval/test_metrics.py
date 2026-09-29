@@ -5,7 +5,7 @@ import statistics
 import pytest
 
 from concerns import CONCERNS as CONCERNS_ASKED
-from metrics import auc, export, post_decision, summarize, sweep, verdict
+from metrics import auc, average_precision, export, post_decision, summarize, sweep, verdict
 
 CONCERNS = ["scope_creep", "single_use_abstraction", "duplication", "weakened_tests"]
 
@@ -212,3 +212,95 @@ def test_sweep_leaves_errored_fixtures_out():
 def test_records_for_unknown_fixture_fail_loudly():
     with pytest.raises(KeyError):
         summarize(records("nope", [{}]), [fixture("good")])
+
+
+def _separable_fixtures_and_records(concern="duplication", n=5):
+    fixtures = [fixture(f"g{i}") for i in range(n)] + [fixture(f"b{i}", concern) for i in range(n)]
+    recs = []
+    for i in range(n):
+        recs += records(f"g{i}", [{concern: 0.05 + 0.01 * i}])
+    for i in range(n):
+        recs += records(f"b{i}", [{concern: 0.90 + 0.01 * i}])
+    return fixtures, recs
+
+
+def _overlapping_fixtures_and_records(concern="duplication"):
+    fixtures = [fixture(f"g{i}") for i in range(6)] + [fixture(f"b{i}", concern) for i in range(6)]
+    good_scores = [0.2, 0.3, 0.6, 0.1, 0.4, 0.7]
+    bad_scores = [0.9, 0.5, 0.8, 0.3, 0.95, 0.6]
+    recs = []
+    for i, s in enumerate(good_scores):
+        recs += records(f"g{i}", [{concern: s}])
+    for i, s in enumerate(bad_scores):
+        recs += records(f"b{i}", [{concern: s}])
+    return fixtures, recs
+
+
+def test_auc_pre_ci_and_pr_auc_pre_are_one_for_a_perfect_separator():
+    fixtures, recs = _separable_fixtures_and_records()
+    dup = summarize(recs, fixtures)["concerns"]["duplication"]
+    assert dup["auc_pre"] == 1.0
+    assert dup["auc_pre_ci"] == [1.0, 1.0]
+    assert dup["pr_auc_pre"] == 1.0
+
+
+def test_brier_pre_is_zero_for_perfect_probabilities():
+    fixtures = [fixture("good"), fixture("bad", "duplication")]
+    recs = records("good", [{"duplication": 0.0}]) + records("bad", [{"duplication": 1.0}])
+    dup = summarize(recs, fixtures)["concerns"]["duplication"]
+    assert dup["brier_pre"] == 0.0
+
+
+def test_average_precision_ties_across_classes_are_order_independent():
+    assert average_precision([True, False], [0.5, 0.5]) == 0.5
+    assert average_precision([False, True], [0.5, 0.5]) == 0.5
+
+
+def test_auc_pre_ci_contains_the_point_estimate():
+    fixtures, recs = _overlapping_fixtures_and_records()
+    dup = summarize(recs, fixtures)["concerns"]["duplication"]
+    lo, hi = dup["auc_pre_ci"]
+    # Strict: proves the interval is a real spread from resampling, not a [point, point] stub.
+    assert lo < dup["auc_pre"] < hi
+
+
+def test_bootstrap_cis_are_deterministic_with_the_fixed_seed():
+    fixtures, recs = _overlapping_fixtures_and_records()
+    s1 = summarize(recs, fixtures)
+    s2 = summarize(recs, fixtures)
+    assert s1["concerns"]["duplication"]["auc_pre_ci"] == s2["concerns"]["duplication"]["auc_pre_ci"]
+    assert s1["pre"]["false_reject_rate_ci"] == s2["pre"]["false_reject_rate_ci"]
+    assert s1["pre"]["catch_rate_ci"] == s2["pre"]["catch_rate_ci"]
+
+
+def test_pre_check_cis_contain_their_point_estimates():
+    fixtures = [fixture(f"g{i}") for i in range(6)] + [fixture(f"b{i}", "duplication") for i in range(6)]
+    recs = []
+    # 2 of 6 good fixtures falsely rejected; 4 of 6 bad fixtures caught
+    good_probs = [0.72, 0.71, 0.1, 0.2, 0.3, 0.4]
+    bad_probs = [0.9, 0.8, 0.75, 0.71, 0.2, 0.1]
+    for i, p in enumerate(good_probs):
+        recs += records(f"g{i}", [{"duplication": p}])
+    for i, p in enumerate(bad_probs):
+        recs += records(f"b{i}", [{"duplication": p}])
+    pre = summarize(recs, fixtures)["pre"]
+    fr_lo, fr_hi = pre["false_reject_rate_ci"]
+    assert fr_lo < pre["false_reject_rate"] < fr_hi
+    catch_lo, catch_hi = pre["catch_rate_ci"]
+    assert catch_lo < pre["catch_rate"] < catch_hi
+
+
+def test_export_converts_nan_in_new_metrics_to_null(tmp_path):
+    # scope_creep has no positive label in this fixture set, so its AUC-family metrics are NaN.
+    fixtures = write_jsonl(tmp_path / "fixtures.jsonl", [fixture("good"), fixture("bad", "duplication")])
+    run = write_jsonl(tmp_path / "run.jsonl", records("good", [{}]) + records("bad", [{"duplication": 0.9}]))
+    out = export([("Jev", run)], fixtures, generated="2026-09-24")
+    text = json.dumps(out, allow_nan=False)  # raises if any NaN survived
+    scope_creep = json.loads(text)["runners"][0]["summary"]["concerns"]["scope_creep"]
+    assert scope_creep["auc_pre"] is None
+    assert scope_creep["auc_pre_ci"] == [None, None]
+    assert scope_creep["pr_auc_pre"] is None
+    duplication = json.loads(text)["runners"][0]["summary"]["concerns"]["duplication"]
+    assert duplication["auc_pre_ci"] == [1.0, 1.0]
+    assert duplication["pr_auc_pre"] == 1.0
+    assert duplication["brier_pre"] == pytest.approx(0.01)

@@ -96,6 +96,11 @@
           file, which reads as duplicated code. Ranking mostly held up (0.82–0.99), but the 0.70 setting didn't transfer: at 0.80
           it would wrongly flag 7% and still catch 79% (Jev without BAML). So a new codebase needs its own setting, or
           commit messages that describe the whole change. The 0.70 setting is not retuned on this set.</p>
+        <p class="note"><strong>Claude on the same changes</strong> (one answer each): it ranks about as well (0.92–0.93 on
+          average against Jev's 0.91), and scope creep is the hardest question for every setup, so that part isn't specific to
+          Jev. At the same 0.70 setting, though, Claude wrongly flags fewer clean changes (Sonnet 0, Opus 2, Haiku 4 of 30):
+          Jev's probabilities run higher on this codebase. Three of Jev's nine are also flagged by a Claude model, so some of
+          these commits are borderline rather than clean-cut. Claude took 17–66 s per check (p95) against Jev's 0.3 s.</p>
       </div>
     </details>
 

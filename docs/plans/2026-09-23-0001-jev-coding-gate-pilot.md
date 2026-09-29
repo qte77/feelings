@@ -5,7 +5,7 @@
 ### Start here (handoff, 2026-09-27)
 
 - **State:** `main` is clean.
-  - #1–#33 are merged on the fork `qte77/feelings`; release `v0.7.0`.
+  - #1–#34 are merged on the fork `qte77/feelings`; release `v0.8.0`.
   - The local check shipped in #33 (row 24 now measures its usefulness).
   - The research is shared (row 26 done, 2026-09-28): qte77/ai-agents-research #515 (a Jev
     analysis page filling "Gap: no review agent"), #516 (BAML `feelings` and decision models
@@ -33,13 +33,27 @@
       are duplication on "Deprecate …" commits that move code.
     - Conclusion: the 0.70 setting doesn't transfer to a new codebase. It isn't retuned;
       a per-repo setting is part of any trial (row 18).
+    - Claude on the same 120 (row 27, #34, k=1):
+
+      | Setup | Avg ROC-AUC | Wrongly flags | Catches | p95 per check |
+      |---|---|---|---|---|
+      | Haiku | 0.92 | 4 of 30 | 92% | 16.8 s |
+      | Sonnet | 0.92 | 0 of 30 | 86% | 33.4 s |
+      | Opus | 0.93 | 2 of 30 | 99% | 65.5 s |
+      | Jev, without BAML | 0.91 | 9 of 30 | 89% | 0.3 s |
+
+      - Ranking is about equal, and scope creep is the hardest question for everyone
+        (0.81–0.92), so that part isn't Jev-specific.
+      - What *is* Jev-specific is its probability level at 0.70.
+      - 3 of Jev's 9 flags are shared with a Claude model: #119 with Opus, #120 and #126
+        with Haiku. Some of these clean commits are borderline.
   - The pilot, "Answers" below.
 - **Next, in order:** the "Remaining work" table.
   - Agent-runnable now, in this order: row 23 (PR-AUC,
     Brier), row 22 (Laya, issue #24), row 19 (example browser), row 9 (harness runners;
     ask for any missing logins), row 20.
-  - Owner-gated: rows 27 (Claude on the yt-dlp set, yes/no), 28 (start the yt-dlp canary
-    arc in the fork), 18, 16 and 17; row 24 waits on about 30 labelled pushes; row 12 waits
+  - Owner-gated: rows 28 (start the yt-dlp canary arc; private device repo yes/no), 18,
+    16 and 17; row 24 waits on about 30 labelled pushes; row 12 waits
     on the BoundaryML maintainers.
 - **How to work:**
   - Commands are in "Commands"; code locations in "Source map".
@@ -355,8 +369,14 @@ jq -s 'group_by(.verdict) | map({verdict: .[0].verdict, n: length})' .git/jev-ch
 uv run eval/fixtures_build.py /dev/null 30 101 ../yt-dlp=qte77/yt-dlp:yt_dlp,test > eval/fixtures-ytdlp.jsonl
 uv run eval/jev_gate.py 5 < eval/fixtures-ytdlp.jsonl > eval/run-python-ytdlp.jsonl
 baml run eval_gate < eval/fixtures-ytdlp.jsonl > eval/run-baml-ytdlp.jsonl
+for m in haiku claude-sonnet-5 claude-opus-5-5; do
+  uv run eval/claude_gate.py 1 $m 8 < eval/fixtures-ytdlp.jsonl > eval/run-claude-$m-ytdlp.jsonl
+done
 uv run eval/metrics.py --export site/data/ytdlp.json eval/fixtures-ytdlp.jsonl \
-  "Jev, without BAML=eval/run-python-ytdlp.jsonl" "Jev, with BAML=eval/run-baml-ytdlp.jsonl"
+  "Jev, without BAML=eval/run-python-ytdlp.jsonl" "Jev, with BAML=eval/run-baml-ytdlp.jsonl" \
+  "Claude Haiku 4.5=eval/run-claude-haiku-ytdlp.jsonl" \
+  "Claude Sonnet 5=eval/run-claude-claude-sonnet-5-ytdlp.jsonl" \
+  "Claude Opus 5.5=eval/run-claude-claude-opus-5-5-ytdlp.jsonl"
 python3 -m http.server 8137 --directory site   # preview at http://localhost:8137/
 # e2e page check; after an environment reset first run: uv run --directory ../polyfetch-scrape patchright install chromium --only-shell
 uv run --directory ../polyfetch-scrape python ../feelings/scripts/check_site.py <out_dir> [url]
@@ -492,6 +512,83 @@ Each becomes a row in the next arc if the result is "go".
 - **Decision (default):** harness runners live in `feelings/eval/`, next to the fixtures,
   metrics and JSONL contract. `coding-harness-eval` solves a different problem.
 
+### yt-dlp download canary: design (row 28, 2026-09-29)
+
+**Goal (owner):** know within hours, not days, when yt-dlp stops downloading on real Windows,
+Linux and macOS machines. Typical causes: YouTube changing its terms, servers, endpoints or
+player; bot checks; PO-token requirements. The canary is a proof of breakage the owner can act
+on. It is not a fix.
+
+**What exists, checked read-only in the fork at `c7fb478d2`:**
+- **Upstream CI:** it doesn't run download tests on a schedule. `core.yml` runs on push and
+  pull requests and excludes download tests (`-m 'not download'` in
+  `devscripts/run_tests.py`). The only cron jobs are CodeQL, `release-nightly.yml` (daily,
+  23:23 UTC) and the wiki. A live canary covers something upstream doesn't.
+- **Reusable today:** `python devscripts/run_tests.py <Extractor>` (e.g. `Youtube`) runs that
+  extractor's `_TESTS` as real downloads through `test/test_download.py`. In test mode the
+  HTTP downloader stops at `_TEST_FILE_SIZE = 10241` bytes
+  (`yt_dlp/downloader/common.py:81`; the hidden `--test` flag at `yt_dlp/options.py:1083`).
+  The canary needs no new test videos, uses the maintainers' own test URLs and expectations,
+  and downloads about 10 KB each.
+- **The YouTube extractor** already names bot and PO-token failures:
+  `PO_TOKEN_GUIDE_URL`, and `_TESTS` entries skipped with `'PO Token Required'` in
+  `yt_dlp/extractor/youtube/_video.py`. Those strings are what the triage question keys on.
+
+**Shape: two repos, because of a security rule.** GitHub's secure-use reference says
+"Self-hosted runners should almost never be used for public repositories on GitHub, because
+any user can open pull requests against the repository and compromise the environment"
+(docs.github.com/en/actions/reference/security/secure-use, checked 2026-09-29).
+
+| Part | Where | Runs on | Trigger |
+|---|---|---|---|
+| A. Hosted canary | the public fork `qte77/yt-dlp`, a new `canary.yml` | GitHub-hosted `ubuntu-latest`, `windows-latest`, `macos-latest` (free for public repos) | `schedule` (e.g. every 6 h, and after the 23:23 nightly), `workflow_dispatch`; **never** `pull_request` |
+| B. Device canary | a new **private** repo, e.g. `qte77/yt-dlp-canary`, which checks out the fork (or installs the nightly) | self-hosted runners on the owner's own Windows, Linux and macOS machines, on residential connections | same schedule; runners in their own runner group |
+
+**Each run:**
+1. Install the version under test: the fork's `master`, the latest nightly, or the latest
+   release. Record `yt-dlp --version`.
+2. Run `python devscripts/run_tests.py <Extractor>` for a short, fixed list (start with
+   `Youtube`, the main target). Keep the list in the workflow.
+3. Keep **only** the logs, the JUnit or pytest summary and the version. Never upload
+   downloaded media as artifacts: test mode stores about 10 KB anyway, and YouTube's terms
+   restrict downloading.
+4. On a failure that a re-run confirms, open or update **one** issue per extractor in the
+   fork (or the private repo): the failing test ids, the OS, the version and the log tail.
+   On the next green run, comment and close it.
+
+**Where Jev fits** (optional, stage 3): one **choice** question on the failure log, the
+shape the talk notes recommend: "What caused this failure?" with the options `extractor
+changed` / `network or timeout` / `geo-block` / `bot check or sign-in` / `PO token required`
+/ `other`. Put the label and its probability on the issue. Measure it like everything else
+here: label about 30 real failures by hand, compare, and keep it only if it beats a simple
+keyword rule (e.g. "Sign in to confirm", `PO Token`).
+
+**Expected failure modes (from yt-dlp's own code and issues; verify in stage 1):**
+- Datacenter IPs on hosted runners may hit bot checks more often than residential ones. That
+  is the reason for part B, and a hosted-only failure alone is a weaker signal than a failure
+  on a device.
+- Flaky networks mean one failure should never open an issue: re-run once first.
+- A green run with skipped tests is not proof: count skips, and alarm on a rising skip count.
+
+**Stages** (each ends in something testable):
+1. **Hosted, manual:** `canary.yml` with `workflow_dispatch` only, 3 OSes, `Youtube` tests.
+   Done when all 3 are green, or fail for a reason we can name.
+2. **Scheduled plus issues:** add the cron, confirm-by-rerun and issue open/close. Done
+   when a deliberately broken run (e.g. a bogus extractor name in a dispatch input) opens
+   an issue, and the next green run closes it.
+3. **Triage:** the Jev choice question, plus a keyword baseline. Done when about 30 labelled
+   failures show whether it helps.
+4. **Devices:** the private repo, self-hosted runners on the owner's machines, the same
+   workflow. Done when the same tests run on all 3 of the owner's OSes on schedule.
+
+**Upstream (yt-dlp/yt-dlp):** its `.NO_AI/README.md` forbids LLM use for issues, PRs, PR
+descriptions, comments, code review and translation, and asks agents to refuse. So:
+- this canary lives in the owner's repos only;
+- any upstream report or fix is written by the owner, end to end, using the canary's logs
+  as evidence;
+- the agent drafts nothing for upstream.
+Whether upstream wants such reports is for the owner to ask the maintainers, in person.
+
 ### Jev in practice: talk notes checked against the docs (2026-09-27)
 
 The owner shared notes from a talk with Vaibhav (BoundaryML) and Dex. Summarised, and
@@ -537,6 +634,5 @@ checked against docs.typesafe.ai `/api` and `/models` on 2026-09-27:
 | 20 | Suspected bug in analyze-stock-kpi, found while reading it on 2026-09-25 and **not verified**: `ui/app.js:689` parses URL state with the fallback universe list before `populateUniversePicker` (l.700) loads `universes.json`, so deep links to universes outside that list may be dropped. | agent verifies with a headless deep-link test; owner approves the issue or PR in that repo | Reproduced (or disproved) with a URL; an issue or fix PR opened there only after approval |
 | 22 | Tracked in **qte77/feelings#24** (issues enabled on the fork 2026-09-25). Measure **Laya** (github.com/NandhaKishorM/laya, Apache-2.0, open weights, self-host only, CPU 193–464 ms/question per its README) on the same 184 fixtures and questions. **Free routes (research 2026-09-25, subagent, sources in the chat log):** (a) a **manual GitHub Actions batch run** on this public repo: free, 4 vCPU/16 GB, 6 h/job, weights cached, Laya run in-process, results as an artifact. It works for evaluating this project, but **not as an always-on server**: GitHub's terms bar "part of a serverless application" and activity "unrelated to" the repo. (b) Your own **HF ZeroGPU Space**: free, 5 GPU-min/day, Gradio wrapper needed. (c) **Modal**: $30/mo credit, but a card is needed. (d) Local, blocked by disk. No hosted API exists, and HF Inference Providers and LLM-catalogue providers (Cerebras, Groq, Cloudflare Workers AI and others) can't serve it. | agent: the owner chose route (a), a **manual** GitHub Actions eval (issue #24, 2026-09-25); open choices in #24: k=1 or k=5, and the English or multilingual checkpoint (default: English, k=5) | `eval/run-laya-184.jsonl` exported next to Jev and Claude; the page's alternatives section says pro or con from measured numbers |
 | 23 | Add **PR-AUC** (rare-class precision: 30–37 positives against 147–154 negatives per question) and the **Brier score** (calibration; the check acts on a fixed 0.70) to `summarize()`, written test-first. Show them in "How we tested it" next to ROC-AUC. No new runs: the existing run files suffice. | agent | Tests written first; values for all 5 setups in `results.json`; the page's "Why ROC-AUC" note updated |
-| 27 | **Claude on the yt-dlp set** (follows row 25, shipped in #32). Run the three Claude models at k=1 on `eval/fixtures-ytdlp.jsonl` through the logged-in session (`uv run eval/claude_gate.py 1 <model> 8 < eval/fixtures-ytdlp.jsonl > eval/run-claude-<model>-ytdlp.jsonl`) and export them next to Jev into `site/data/ytdlp.json`. This shows whether Claude's clean-change flags also rise on yt-dlp's one-line messages, i.e. whether the 23–30% is Jev-specific. Opus costs about $0.04 per check, so about $5 for 120. | owner: yes/no (Claude usage) | Three runs exported; the page's yt-dlp section compares them |
-| 28 | **yt-dlp download canary on real devices** (owner goal, 2026-09-28). Notice as soon as yt-dlp stops downloading, e.g. when YouTube changes its terms, servers or endpoints, by running real downloads on Windows, Linux and macOS. **It belongs in its own arc in the owner's fork `qte77/yt-dlp`, not in this repo.** Sketch, with defaults to confirm there:<br>• a scheduled and manual Actions matrix: GitHub-hosted runners, plus self-hosted "device" runners;<br>• a few short test videos, preferably the ones yt-dlp's own extractor `_TESTS` already use, or the owner's own or CC-licensed uploads;<br>• download a small format, check it with ffprobe, then keep only logs and hashes, never the videos;<br>• on failure, open an issue **in the fork**; Jev can triage the error log with one *choice* question (extractor broke / network / geo-block / bot check / login needed).<br>**Risks, unverified:** datacenter runner IPs may get YouTube bot checks, giving false alarms, which is one reason for device runners; YouTube's terms restrict downloading, hence test and own content only. **Upstream:** yt-dlp's `.NO_AI/README.md` forbids LLM-made issues, PRs, comments and translations, and says agents must refuse to interact. So any contribution there must be written by a human end to end. An agent drafts nothing for upstream; the fork and its canary are the owner's. | owner: start the arc in `qte77/yt-dlp` | A plan file in the fork; the first matrix run green on at least 3 OSes; a deliberately broken URL opens a triaged issue in the fork |
+| 28 | **yt-dlp download canary on real devices** (owner goal, 2026-09-28). Design: "yt-dlp download canary: design" above. It reuses yt-dlp's own `run_tests.py <Extractor>` download tests, capped at 10 KB. Part A is hosted runners in the public fork; part B is device runners in a **private** repo, per GitHub's security guidance. It runs in 4 stages, and the fork and private repo only; the agent drafts nothing for yt-dlp upstream (`.NO_AI`). **It belongs in its own arc** (a plan file in `qte77/yt-dlp` or the new private repo), not in this repo. | owner: start the arc; say whether the private device repo is wanted | Stage 1 done: `canary.yml` green (or a named failure) on 3 hosted OSes; then stages 2–4 per the design |
 | 24 | **Is the local check useful?** (the check shipped in #33, 2026-09-28: `eval/jev_check.py` and `.githooks/pre-push`, enabled with `git config core.hooksPath .githooks`). **Replay baseline** on this repo's last 20 commits, which were reviewed and merged, mostly docs: 1 flag, `8afa0c4` (#32) on weakened_tests at 0.71. It is **noise**: #32's new tests hold weakened-assert lines as *test data*, and Jev read them as the real thing. **Labelling protocol:** every push appends a line to `.git/jev-check.jsonl` with `"verdict": null`. Once a week, set it to `caught` (a flag was real and you changed something), `noise` (a flag was fine), `missed` (review or CI later found one of the four issues with no flag) or `ok` (no flag, nothing found). **Decide after about 30 pushes or 4 weeks, whichever comes first.** Keep it if precision (caught / (caught + noise)) is at least 50%, there's at least 1 caught, and noise is at most 1 per 10 pushes. Otherwise remove the hook, or reset `JEV_CHECK_AT` from the logged probabilities, since the yt-dlp result says settings are per repo. A code-heavy repo gives a better baseline than this docs-heavy one, but its commits must not be fixture sources. | data (pushes) then owner | About 30 labelled pushes; precision, noise per push, misses, and p95 time and cost computed from the log with `jq`; keep, retune or remove decided |

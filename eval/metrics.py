@@ -10,6 +10,7 @@ uv run eval/metrics.py --export site/data/results.json eval/fixtures.jsonl "Name
 import datetime
 import json
 import math
+import random
 import statistics
 import sys
 from collections import Counter, defaultdict
@@ -37,6 +38,32 @@ def auc(labels, scores):
     return wins / (len(pos) * len(neg))
 
 
+def average_precision(labels, scores):
+    """PR-AUC via the step method: precision at each distinct threshold, weighted by the recall
+    step there. Threshold-based (not rank-based), so tied scores across classes don't make the
+    result depend on input order.
+    """
+    pos = [s for lab, s in zip(labels, scores, strict=True) if lab]
+    neg = [s for lab, s in zip(labels, scores, strict=True) if not lab]
+    if not pos or not neg:
+        return math.nan
+    total_pos = len(pos)
+    prev_recall = 0.0
+    ap = 0.0
+    for t in sorted(set(scores), reverse=True):
+        tp = sum(1 for s in pos if s >= t)
+        predicted = sum(1 for s in scores if s >= t)
+        recall = tp / total_pos
+        ap += (recall - prev_recall) * (tp / predicted)
+        prev_recall = recall
+    return ap
+
+
+def brier_score(labels, probs):
+    """Mean squared error of a probability against its 0/1 label."""
+    return statistics.fmean((p - (1.0 if lab else 0.0)) ** 2 for lab, p in zip(labels, probs, strict=True))
+
+
 def post_decision(probs):
     if sum(p >= REJECT_AT for p in probs) >= AGREE:
         return "problem"
@@ -48,6 +75,24 @@ def post_decision(probs):
 def percentile(values, q):
     ranked = sorted(values)
     return ranked[max(math.ceil(q * len(ranked)) - 1, 0)]
+
+
+def bootstrap_ci(groups, statistic, seed=0, resamples=1000):
+    """Percentile 95% bootstrap CI, stdlib only.
+
+    Each group in `groups` is resampled independently, with replacement, at its own size — so a
+    two-group call (positives, negatives) keeps both classes in every resample. `statistic` is
+    called with the resampled groups, in the same shape as `groups`, and must return a float.
+    Fixed seed for determinism; [nan, nan] if any group is empty.
+    """
+    if any(not g for g in groups):
+        return [math.nan, math.nan]
+    rng = random.Random(seed)  # noqa: S311 - deterministic bootstrap resampling, not cryptography
+    estimates = []
+    for _ in range(resamples):
+        resampled = [[g[rng.randrange(len(g))] for _ in range(len(g))] for g in groups]
+        estimates.append(statistic(*resampled))
+    return [percentile(estimates, 0.025), percentile(estimates, 0.975)]
 
 
 def summarize(records, fixtures):
@@ -70,10 +115,23 @@ def summarize(records, fixtures):
     for c in concerns:
         labels = [expect[fid][c] for fid in ids]
         probs = [[s[c] for s in samples[fid]] for fid in ids]
+        first = [p[0] for p in probs]
         stds = [statistics.pstdev(p) for p in probs]
         pair_stds += stds
+        pos_ids = [fid for fid, lab in zip(ids, labels, strict=True) if lab]
+        neg_ids = [fid for fid, lab in zip(ids, labels, strict=True) if not lab]
+        first_by_id = dict(zip(ids, first, strict=True))
+
+        def _auc_stat(sample_pos, sample_neg, first_by_id=first_by_id):
+            lab = [True] * len(sample_pos) + [False] * len(sample_neg)
+            sc = [first_by_id[fid] for fid in sample_pos] + [first_by_id[fid] for fid in sample_neg]
+            return auc(lab, sc)
+
         per_concern[c] = {
-            "auc_pre": auc(labels, [p[0] for p in probs]),
+            "auc_pre": auc(labels, first),
+            "auc_pre_ci": bootstrap_ci([pos_ids, neg_ids], _auc_stat),
+            "pr_auc_pre": average_precision(labels, first),
+            "brier_pre": brier_score(labels, first),
             "auc_post": auc(labels, [statistics.fmean(p) for p in probs]),
             "agreement": statistics.fmean(len({x >= CLEAR_BELOW for x in p}) == 1 for p in probs) if repeated else None,
             "mean_std": statistics.fmean(stds) if repeated else None,
@@ -83,13 +141,19 @@ def summarize(records, fixtures):
     rejected = {fid: any(v >= REJECT_AT for v in samples[fid][0].values()) for fid in ids}
     good = [fid for fid in ids if not is_bad[fid]]
     bad = [fid for fid in ids if is_bad[fid]]
+
+    def _rate_stat(sample):
+        return statistics.fmean(rejected[fid] for fid in sample)
+
     latencies = [r["latency_ms"] for r in records if r.get("latency_ms") is not None]
     costs = [r["cost_usd"] for r in records if r.get("cost_usd") is not None]
     return {
         "concerns": per_concern,
         "pre": {
             "false_reject_rate": statistics.fmean(rejected[f] for f in good) if good else math.nan,
+            "false_reject_rate_ci": bootstrap_ci([good], _rate_stat),
             "catch_rate": statistics.fmean(rejected[f] for f in bad) if bad else math.nan,
+            "catch_rate_ci": bootstrap_ci([bad], _rate_stat),
             "n_good": len(good),
             "n_bad": len(bad),
         },

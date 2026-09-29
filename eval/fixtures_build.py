@@ -7,6 +7,12 @@
 
 The optional dirs name where a repo keeps code and tests (default `src,tests`; yt-dlp: `yt_dlp,test`).
 
+Variant mode strips a fixture-building cue from every bad-* record of an existing fixtures file
+(good-* records pass through unchanged), for checking whether a check is reading the cue rather
+than the flaw:
+
+    uv run eval/fixtures_build.py --variant headers|inline <fixtures.jsonl> > variant.jsonl
+
 Each source commit yields one good fixture (its real diff) and three bad fixtures made by
 mutating that same diff, so good and bad differ only by the problem. Commits already used
 by the existing fixtures are skipped, and sources are picked to serve the scarcest concern

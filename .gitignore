@@ -6,6 +6,8 @@ eval/*.jsonl
 !eval/fixtures-p2-*.jsonl
 eval/*.err
 __pycache__/
+# Subagent git worktrees (plan 0002, parallel lanes); the harness creates and removes them.
+.claude/worktrees/
 # BAML's skill lives once, in .claude/skills/baml-core. `baml agent install` also writes a
 # copy to .agents/skills/ (Codex/OpenCode) and backups to baml-old_skills/; keep both out.
 .agents/

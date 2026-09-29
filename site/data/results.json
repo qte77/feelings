@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-25",
+ "generated": "2026-09-29",
  "questions": {
   "scope_creep": "Does this change add functionality beyond what its commit message describes?",
   "single_use_abstraction": "Does this change add a class, interface, helper function, or config parameter that nothing else in the diff uses?",
@@ -15,6 +15,12 @@
     "concerns": {
      "scope_creep": {
       "auc_pre": 0.9056332236842105,
+      "auc_pre_ci": [
+       0.8534128289473685,
+       0.9468544407894737
+      ],
+      "pr_auc_pre": 0.7146919460578962,
+      "brier_pre": 0.1317641304347826,
       "auc_post": 0.910875822368421,
       "agreement": 0.967391304347826,
       "mean_std": 0.010797910718500078,
@@ -22,6 +28,12 @@
      },
      "single_use_abstraction": {
       "auc_pre": 0.8943739658025373,
+      "auc_pre_ci": [
+       0.8480419194704909,
+       0.9352822209965067
+      ],
+      "pr_auc_pre": 0.5990657268533538,
+      "brier_pre": 0.22995163043478262,
       "auc_post": 0.9043022614451186,
       "agreement": 0.9728260869565217,
       "mean_std": 0.010626513784166049,
@@ -29,6 +41,12 @@
      },
      "duplication": {
       "auc_pre": 0.9822510822510823,
+      "auc_pre_ci": [
+       0.9558441558441558,
+       1.0
+      ],
+      "pr_auc_pre": 0.9595069453690144,
+      "brier_pre": 0.05422010869565217,
       "auc_post": 0.9853896103896104,
       "agreement": 0.9945652173913043,
       "mean_std": 0.009411233511696463,
@@ -36,6 +54,12 @@
      },
      "weakened_tests": {
       "auc_pre": 0.9867965367965368,
+      "auc_pre_ci": [
+       0.9714285714285714,
+       0.996969696969697
+      ],
+      "pr_auc_pre": 0.9410815727818147,
+      "brier_pre": 0.05727173913043478,
       "auc_post": 0.9901515151515151,
       "agreement": 0.9728260869565217,
       "mean_std": 0.007222627376180997,
@@ -44,7 +68,15 @@
     },
     "pre": {
      "false_reject_rate": 0.01694915254237288,
+     "false_reject_rate_ci": [
+      0.0,
+      0.05084745762711865
+     ],
      "catch_rate": 0.784,
+     "catch_rate_ci": [
+      0.712,
+      0.856
+     ],
      "n_good": 59,
      "n_bad": 125
     },
@@ -134,6 +166,12 @@
     "concerns": {
      "scope_creep": {
       "auc_pre": 0.9061472039473685,
+      "auc_pre_ci": [
+       0.8518708881578947,
+       0.9482935855263158
+      ],
+      "pr_auc_pre": 0.7077134446718791,
+      "brier_pre": 0.13217880434782608,
       "auc_post": 0.9093338815789473,
       "agreement": 0.9891304347826086,
       "mean_std": 0.010250633387555328,
@@ -141,6 +179,12 @@
      },
      "single_use_abstraction": {
       "auc_pre": 0.9109211252068395,
+      "auc_pre_ci": [
+       0.8681742967457253,
+       0.9479683765398051
+      ],
+      "pr_auc_pre": 0.6655373318503703,
+      "brier_pre": 0.2274146739130435,
       "auc_post": 0.9052215480786909,
       "agreement": 0.9836956521739131,
       "mean_std": 0.011145880657278937,
@@ -148,6 +192,12 @@
      },
      "duplication": {
       "auc_pre": 0.9829004329004329,
+      "auc_pre_ci": [
+       0.9571428571428572,
+       1.0
+      ],
+      "pr_auc_pre": 0.9580756135396725,
+      "brier_pre": 0.05285108695652174,
       "auc_post": 0.9846320346320346,
       "agreement": 0.9945652173913043,
       "mean_std": 0.010320844818293554,
@@ -155,6 +205,12 @@
      },
      "weakened_tests": {
       "auc_pre": 0.9899350649350649,
+      "auc_pre_ci": [
+       0.9775974025974026,
+       0.9980519480519481
+      ],
+      "pr_auc_pre": 0.9488892787298585,
+      "brier_pre": 0.05673097826086956,
       "auc_post": 0.9905844155844156,
       "agreement": 0.9782608695652174,
       "mean_std": 0.007166566873719754,
@@ -163,7 +219,15 @@
     },
     "pre": {
      "false_reject_rate": 0.01694915254237288,
+     "false_reject_rate_ci": [
+      0.0,
+      0.05084745762711865
+     ],
      "catch_rate": 0.792,
+     "catch_rate_ci": [
+      0.72,
+      0.864
+     ],
      "n_good": 59,
      "n_bad": 125
     },
@@ -246,6 +310,12 @@
     "concerns": {
      "scope_creep": {
       "auc_pre": 0.911389802631579,
+      "auc_pre_ci": [
+       0.8680098684210527,
+       0.9466488486842105
+      ],
+      "pr_auc_pre": 0.5933067559558135,
+      "brier_pre": 0.12683423913043476,
       "auc_post": 0.911389802631579,
       "agreement": null,
       "mean_std": null,
@@ -253,6 +323,12 @@
      },
      "single_use_abstraction": {
       "auc_pre": 0.8319544033829748,
+      "auc_pre_ci": [
+       0.7730281301709873,
+       0.8845375988233131
+      ],
+      "pr_auc_pre": 0.45566961254101984,
+      "brier_pre": 0.19153532608695653,
       "auc_post": 0.8319544033829748,
       "agreement": null,
       "mean_std": null,
@@ -260,6 +336,12 @@
      },
      "duplication": {
       "auc_pre": 0.9641774891774891,
+      "auc_pre_ci": [
+       0.9215367965367965,
+       0.9940476190476191
+      ],
+      "pr_auc_pre": 0.9026538494185553,
+      "brier_pre": 0.03980597826086957,
       "auc_post": 0.9641774891774891,
       "agreement": null,
       "mean_std": null,
@@ -267,6 +349,12 @@
      },
      "weakened_tests": {
       "auc_pre": 0.8896103896103896,
+      "auc_pre_ci": [
+       0.7993506493506494,
+       0.9606060606060606
+      ],
+      "pr_auc_pre": 0.8050520823385664,
+      "brier_pre": 0.060812500000000005,
       "auc_post": 0.8896103896103896,
       "agreement": null,
       "mean_std": null,
@@ -275,7 +363,15 @@
     },
     "pre": {
      "false_reject_rate": 0.11864406779661017,
+     "false_reject_rate_ci": [
+      0.05084745762711865,
+      0.2033898305084746
+     ],
      "catch_rate": 0.792,
+     "catch_rate_ci": [
+      0.72,
+      0.856
+     ],
      "n_good": 59,
      "n_bad": 125
     },
@@ -357,6 +453,12 @@
     "concerns": {
      "scope_creep": {
       "auc_pre": 0.9336965460526315,
+      "auc_pre_ci": [
+       0.897203947368421,
+       0.9629934210526315
+      ],
+      "pr_auc_pre": 0.6434667397660819,
+      "brier_pre": 0.12142663043478259,
       "auc_post": 0.9336965460526315,
       "agreement": null,
       "mean_std": null,
@@ -364,6 +466,12 @@
      },
      "single_use_abstraction": {
       "auc_pre": 0.9174480603052032,
+      "auc_pre_ci": [
+       0.8721272292700865,
+       0.9544953116381688
+      ],
+      "pr_auc_pre": 0.6577167964522754,
+      "brier_pre": 0.1801375,
       "auc_post": 0.9174480603052032,
       "agreement": null,
       "mean_std": null,
@@ -371,6 +479,12 @@
      },
      "duplication": {
       "auc_pre": 0.9964285714285714,
+      "auc_pre_ci": [
+       0.9876623376623377,
+       1.0
+      ],
+      "pr_auc_pre": 0.9696874514486434,
+      "brier_pre": 0.02346576086956522,
       "auc_post": 0.9964285714285714,
       "agreement": null,
       "mean_std": null,
@@ -378,6 +492,12 @@
      },
      "weakened_tests": {
       "auc_pre": 0.9845238095238096,
+      "auc_pre_ci": [
+       0.9639610389610389,
+       0.9997835497835498
+      ],
+      "pr_auc_pre": 0.9464557864152184,
+      "brier_pre": 0.027053804347826088,
       "auc_post": 0.9845238095238096,
       "agreement": null,
       "mean_std": null,
@@ -386,7 +506,15 @@
     },
     "pre": {
      "false_reject_rate": 0.0,
+     "false_reject_rate_ci": [
+      0.0,
+      0.0
+     ],
      "catch_rate": 0.904,
+     "catch_rate_ci": [
+      0.848,
+      0.952
+     ],
      "n_good": 59,
      "n_bad": 125
     },
@@ -468,6 +596,12 @@
     "concerns": {
      "scope_creep": {
       "auc_pre": 0.9786184210526315,
+      "auc_pre_ci": [
+       0.960217927631579,
+       0.9912623355263158
+      ],
+      "pr_auc_pre": 0.8597065932865375,
+      "brier_pre": 0.10753260869565218,
       "auc_post": 0.9786184210526315,
       "agreement": null,
       "mean_std": null,
@@ -475,6 +609,12 @@
      },
      "single_use_abstraction": {
       "auc_pre": 0.8969479683765398,
+      "auc_pre_ci": [
+       0.8526383526383526,
+       0.9352822209965067
+      ],
+      "pr_auc_pre": 0.5990562927390174,
+      "brier_pre": 0.21640869565217394,
       "auc_post": 0.8969479683765398,
       "agreement": null,
       "mean_std": null,
@@ -482,6 +622,12 @@
      },
      "duplication": {
       "auc_pre": 0.999025974025974,
+      "auc_pre_ci": [
+       0.9963203463203463,
+       1.0
+      ],
+      "pr_auc_pre": 0.9944444444444445,
+      "brier_pre": 0.035821739130434786,
       "auc_post": 0.999025974025974,
       "agreement": null,
       "mean_std": null,
@@ -489,6 +635,12 @@
      },
      "weakened_tests": {
       "auc_pre": 1.0,
+      "auc_pre_ci": [
+       1.0,
+       1.0
+      ],
+      "pr_auc_pre": 1.0,
+      "brier_pre": 0.006282608695652173,
       "auc_post": 1.0,
       "agreement": null,
       "mean_std": null,
@@ -497,7 +649,15 @@
     },
     "pre": {
      "false_reject_rate": 0.0,
+     "false_reject_rate_ci": [
+      0.0,
+      0.0
+     ],
      "catch_rate": 0.984,
+     "catch_rate_ci": [
+      0.96,
+      1.0
+     ],
      "n_good": 59,
      "n_bad": 125
     },

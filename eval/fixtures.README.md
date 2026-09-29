@@ -94,8 +94,8 @@ unchanged, and ids and labels stay the same.
 - Result: with `inline`, *unused abstraction* first-answer ROC-AUC falls from 0.894 to 0.860
   (184) and from 0.851 to 0.799 (yt-dlp). So the new-file shape is a cue, and plan 0002 row P5
   fixes the builder.
-- These files are **evaluation variants, not replacements**; the canonical sets stay
-  `fixtures.jsonl` and `fixtures-ytdlp.jsonl` until P5.
+- These files derive from the **v0.9.0** versions of the canonical sets, from before P5 settled
+  them. They are kept as #40's evidence and aren't canonical.
 **Settled in place (2026-09-29, plan 0002 row P5)**: both canonical files were rewritten with
 `--variant settle`, the transform every build now applies (`MUTATIONS` wraps each mutation in
 `settle()`). Ids, labels and all `good-*` records are unchanged, and every changed record still

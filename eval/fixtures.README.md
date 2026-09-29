@@ -82,6 +82,20 @@ subjects read, and the four suspicious diffs opened; one (`ade8c2b`, "Skip flaky
 really skipped tests via `pytest.skip(...)`, which led to that filter rule and a rebuild.
 Totals: 30 good, and 19 / 26 / 19 / 26 bad for weakened_tests / single_use_abstraction /
 duplication / scope_creep.
+**Cue variants `fixtures-p2-*.jsonl` (2026-09-29, plan 0002 row P2, #40)**: derived from
+`fixtures.jsonl` and `fixtures-ytdlp.jsonl` with `uv run eval/fixtures_build.py --variant
+headers|inline <fixtures.jsonl>`. Only `bad-*` records are transformed; clean records are copied
+unchanged, and ids and labels stay the same.
+- `headers` rewrites the synthetic `@@ -500,0 +501,N @@` header to continue after the section's
+  last real hunk: 43 changed on the 184 set, 30 on yt-dlp.
+- `inline` moves a builder-added new-file section, recognised by its `index 0000000..0000000`
+  line, into an existing non-test source file of the same diff. 34 changed on the 184 set, and
+  16 couldn't be moved because the diff has no other source file; 41 changed on yt-dlp.
+- Result: with `inline`, *unused abstraction* first-answer ROC-AUC falls from 0.894 to 0.860
+  (184) and from 0.851 to 0.799 (yt-dlp). So the new-file shape is a cue, and plan 0002 row P5
+  fixes the builder.
+- These files are **evaluation variants, not replacements**; the canonical sets stay
+  `fixtures.jsonl` and `fixtures-ytdlp.jsonl` until P5.
 **Limits**: "good" labels are manual spot-review for the original 60 and filter-based for the extension, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

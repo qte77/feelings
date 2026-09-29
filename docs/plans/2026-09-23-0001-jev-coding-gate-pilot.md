@@ -52,8 +52,8 @@
   - Agent-runnable now, in this order: row 23 (PR-AUC,
     Brier), row 22 (Laya, issue #24), row 19 (example browser), row 9 (harness runners;
     ask for any missing logins), row 20.
-  - Owner-gated: rows 28 (start the yt-dlp canary arc; private device repo yes/no), 18,
-    16 and 17; row 24 waits on about 30 labelled pushes; row 12 waits
+  - Owner-gated: rows 18, 16 and 17. Row 28 is handed off to qte77/yt-dlp#1 (tracking
+    issues, implemented in the fork); row 24 waits on about 30 labelled pushes; row 12 waits
     on the BoundaryML maintainers.
 - **How to work:**
   - Commands are in "Commands"; code locations in "Source map".
@@ -514,6 +514,25 @@ Each becomes a row in the next arc if the result is "go".
 
 ### yt-dlp download canary: design (row 28, 2026-09-29)
 
+> **Now tracked in the fork: [qte77/yt-dlp#1](https://github.com/qte77/yt-dlp/issues/1)**
+> (issues enabled there 2026-09-29, owner). Stages: #2 hosted on demand · #5 schedule and
+> issues · #3 device runners in a private repo · #4 triage. Those issues supersede this
+> section. The fork's code isn't modified from here; the owner decides who implements them.
+>
+> **Findings that changed the design** (subagent research, re-checked first-hand 2026-09-29):
+> - yt-dlp's pinned FAQ #3766 and maintainers in #16773 and #16870 say datacenter or VPS
+>   IPs get blocked, and that PO tokens don't help once an IP is blocked.
+> - GitHub: Linux and Windows runners share Azure's IP ranges; macOS runners run in
+>   "GitHub's own macOS cloud".
+> - No source names GitHub Actions or Azure as blocked. That is **inferred**.
+>
+> Hence:
+> - bot check, PO token and 403 are **separate outcomes**, not "extractor changed";
+> - hosted runners are the **control**, and device runners are the **detector**, moved to
+>   stage 3;
+> - the 10 KB test cap doesn't avoid the gated player request;
+> - no cookies on hosted runners, because the wiki warns of account bans.
+
 **Goal (owner):** know within hours, not days, when yt-dlp stops downloading on real Windows,
 Linux and macOS machines. Typical causes: YouTube changing its terms, servers, endpoints or
 player; bot checks; PO-token requirements. The canary is a proof of breakage the owner can act
@@ -634,5 +653,5 @@ checked against docs.typesafe.ai `/api` and `/models` on 2026-09-27:
 | 20 | Suspected bug in analyze-stock-kpi, found while reading it on 2026-09-25 and **not verified**: `ui/app.js:689` parses URL state with the fallback universe list before `populateUniversePicker` (l.700) loads `universes.json`, so deep links to universes outside that list may be dropped. | agent verifies with a headless deep-link test; owner approves the issue or PR in that repo | Reproduced (or disproved) with a URL; an issue or fix PR opened there only after approval |
 | 22 | Tracked in **qte77/feelings#24** (issues enabled on the fork 2026-09-25). Measure **Laya** (github.com/NandhaKishorM/laya, Apache-2.0, open weights, self-host only, CPU 193–464 ms/question per its README) on the same 184 fixtures and questions. **Free routes (research 2026-09-25, subagent, sources in the chat log):** (a) a **manual GitHub Actions batch run** on this public repo: free, 4 vCPU/16 GB, 6 h/job, weights cached, Laya run in-process, results as an artifact. It works for evaluating this project, but **not as an always-on server**: GitHub's terms bar "part of a serverless application" and activity "unrelated to" the repo. (b) Your own **HF ZeroGPU Space**: free, 5 GPU-min/day, Gradio wrapper needed. (c) **Modal**: $30/mo credit, but a card is needed. (d) Local, blocked by disk. No hosted API exists, and HF Inference Providers and LLM-catalogue providers (Cerebras, Groq, Cloudflare Workers AI and others) can't serve it. | agent: the owner chose route (a), a **manual** GitHub Actions eval (issue #24, 2026-09-25); open choices in #24: k=1 or k=5, and the English or multilingual checkpoint (default: English, k=5) | `eval/run-laya-184.jsonl` exported next to Jev and Claude; the page's alternatives section says pro or con from measured numbers |
 | 23 | Add **PR-AUC** (rare-class precision: 30–37 positives against 147–154 negatives per question) and the **Brier score** (calibration; the check acts on a fixed 0.70) to `summarize()`, written test-first. Show them in "How we tested it" next to ROC-AUC. No new runs: the existing run files suffice. | agent | Tests written first; values for all 5 setups in `results.json`; the page's "Why ROC-AUC" note updated |
-| 28 | **yt-dlp download canary on real devices** (owner goal, 2026-09-28). Design: "yt-dlp download canary: design" above. It reuses yt-dlp's own `run_tests.py <Extractor>` download tests, capped at 10 KB. Part A is hosted runners in the public fork; part B is device runners in a **private** repo, per GitHub's security guidance. It runs in 4 stages, and the fork and private repo only; the agent drafts nothing for yt-dlp upstream (`.NO_AI`). **It belongs in its own arc** (a plan file in `qte77/yt-dlp` or the new private repo), not in this repo. | owner: start the arc; say whether the private device repo is wanted | Stage 1 done: `canary.yml` green (or a named failure) on 3 hosted OSes; then stages 2–4 per the design |
+| 28 | **yt-dlp download canary on real devices** (owner goal, 2026-09-28). **Handed off as tracking issues in the fork** (owner, 2026-09-29: don't modify `qte77/yt-dlp` from here; open issues for its implementers instead): [qte77/yt-dlp#1](https://github.com/qte77/yt-dlp/issues/1) is the tracker, with stages #2 (hosted, on demand), #5 (schedule and issues), #3 (device runners, private repo) and #4 (triage). The design and findings are above. The agent drafts nothing for yt-dlp upstream (`.NO_AI`). Nothing is left to do in this repo. | issues (owner or implementers in the fork) | Close this row when #1 is closed, or move it to the fork's own plan; this repo only links to it |
 | 24 | **Is the local check useful?** (the check shipped in #33, 2026-09-28: `eval/jev_check.py` and `.githooks/pre-push`, enabled with `git config core.hooksPath .githooks`). **Replay baseline** on this repo's last 20 commits, which were reviewed and merged, mostly docs: 1 flag, `8afa0c4` (#32) on weakened_tests at 0.71. It is **noise**: #32's new tests hold weakened-assert lines as *test data*, and Jev read them as the real thing. **Labelling protocol:** every push appends a line to `.git/jev-check.jsonl` with `"verdict": null`. Once a week, set it to `caught` (a flag was real and you changed something), `noise` (a flag was fine), `missed` (review or CI later found one of the four issues with no flag) or `ok` (no flag, nothing found). **Decide after about 30 pushes or 4 weeks, whichever comes first.** Keep it if precision (caught / (caught + noise)) is at least 50%, there's at least 1 caught, and noise is at most 1 per 10 pushes. Otherwise remove the hook, or reset `JEV_CHECK_AT` from the logged probabilities, since the yt-dlp result says settings are per repo. A code-heavy repo gives a better baseline than this docs-heavy one, but its commits must not be fixture sources. | data (pushes) then owner | About 30 labelled pushes; precision, noise per push, misses, and p95 time and cost computed from the log with `jq`; keep, retune or remove decided |

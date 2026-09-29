@@ -96,6 +96,19 @@ unchanged, and ids and labels stay the same.
   fixes the builder.
 - These files are **evaluation variants, not replacements**; the canonical sets stay
   `fixtures.jsonl` and `fixtures-ytdlp.jsonl` until P5.
+**Settled in place (2026-09-29, plan 0002 row P5)**: both canonical files were rewritten with
+`--variant settle`, the transform every build now applies (`MUTATIONS` wraps each mutation in
+`settle()`). Ids, labels and all `good-*` records are unchanged, and every changed record still
+parses, leaks nothing and has consistent hunk counts.
+- 184 set: 77 `bad-*` diffs changed.
+- yt-dlp set: 71 changed; no mutation-added new file and no fixed `-500` header remain.
+- **16 records on the 184 keep a mutation-added new file**, because their diff has no other
+  non-test source file to hold the addition: `bad-02/06/14/23/33/52/53/55/58/61-single_use_abstraction`
+  and `bad-26/33/39/53/55/60-scope_creep`. Read their scores with that cue in mind.
+- Before P5 the sha256 values were `1d94ddac…` (184) and `990e2eaa…` (yt-dlp), tag `v0.9.0`;
+  after, `69859a31…` and `e6f384d1…`.
+- **`site/data/results.json` and `ytdlp.json` still describe the v0.9.0 versions** until the
+  Claude runs are redone on the 148 changed records (plan 0002, P5).
 **Limits**: "good" labels are manual spot-review for the original 60 and filter-based for the extension, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

@@ -105,7 +105,7 @@ with sync_playwright() as p:
                     "sized-table": 5,
                     "pilot-table": 5,
                     "sweep-table": 9,
-                    "external-table": 2,
+                    "external-table": 5,
                 },
                 f"{where}: rows {rows}",
             )

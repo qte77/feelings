@@ -3,6 +3,7 @@
 eval/*.jsonl
 !eval/fixtures.jsonl
 !eval/fixtures-ytdlp.jsonl
+!eval/fixtures-p2-*.jsonl
 eval/*.err
 __pycache__/
 # BAML's skill lives once, in .claude/skills/baml-core. `baml agent install` also writes a

@@ -7,6 +7,12 @@
 
 The optional dirs name where a repo keeps code and tests (default `src,tests`; yt-dlp: `yt_dlp,test`).
 
+Variant mode strips a fixture-building cue from every bad-* record of an existing fixtures file
+(good-* records pass through unchanged), for checking whether a check is reading the cue rather
+than the flaw:
+
+    uv run eval/fixtures_build.py --variant headers|inline <fixtures.jsonl> > variant.jsonl
+
 Each source commit yields one good fixture (its real diff) and three bad fixtures made by
 mutating that same diff, so good and bad differ only by the problem. Commits already used
 by the existing fixtures are skipped, and sources are picked to serve the scarcest concern
@@ -261,6 +267,91 @@ def add_duplication(diff, seed):
     return None
 
 
+_SYNTHETIC_HUNK = re.compile(r"^@@ -500,0 \+501,(\d+) @@$", re.MULTILINE)
+# _HUNK itself isn't MULTILINE (it's normally matched one line at a time); this variant finds
+# every hunk header inside a multi-line section.
+_HUNK_ML = re.compile(_HUNK.pattern, re.MULTILINE)
+
+# Lines assumed to separate the last real hunk from the synthetic one; real diffs don't put
+# two hunks back to back (git's default 3-line context would have merged them into one).
+_HEADER_GAP = 20
+
+
+def realistic_headers(diff):
+    """Rewrite each synthetic `@@ -500,0 +501,N @@` header to continue after that file section's
+    last real hunk, instead of the fixed `-500,0`/`+501` cue `_append_hunk` writes.
+
+    Only the header numbers move; the hunk body (what it adds) is untouched. A section whose
+    synthetic hunk has no real hunk before it is left alone.
+    """
+    out, cursor = [], 0
+    for _path, start, end in _files(diff):
+        section = diff[start:end]
+        synthetic = _SYNTHETIC_HUNK.search(section)
+        if not synthetic:
+            continue
+        real = None
+        for m in _HUNK_ML.finditer(section[: synthetic.start()]):
+            real = m
+        if real is None:
+            continue
+        old_start, old_n, new_start, new_n = (int(real.group(i) or 1) for i in (1, 2, 3, 4))
+        new_old_start = old_start + old_n + _HEADER_GAP
+        offset = (new_start + new_n) - (old_start + old_n)
+        new_new_start = new_old_start + offset
+        header = f"@@ -{new_old_start},0 +{new_new_start},{synthetic.group(1)} @@"
+        abs_start, abs_end = start + synthetic.start(), start + synthetic.end()
+        out.append(diff[cursor:abs_start])
+        out.append(header)
+        cursor = abs_end
+    out.append(diff[cursor:])
+    return "".join(out)
+
+
+_NEW_FILE_HUNK = re.compile(r"^@@ -0,0 \+1,(\d+) @@\n", re.MULTILINE)
+
+# `_new_file` always writes a null before-hash *and* a null after-hash (`index 0000000..0000000`)
+# because it invents no blob. A real commit's own new file always gets a real after-hash, so this
+# marks the section as mutation-added rather than one the source commit itself already added (a
+# source commit can legitimately add a file of its own, e.g. an extracted helper module).
+_SYNTHETIC_NEW_FILE = "new file mode 100644\nindex 0000000..0000000\n"
+
+
+def inline_new_files(diff):
+    """Move a mutation-added `new file mode` section's lines into an existing non-test source
+    file section of the same diff, as an appended hunk with a realistic header (via
+    `realistic_headers`). Records built by `add_unused_abstraction` and odd-seed
+    `add_scope_creep` have exactly one such section.
+
+    Left unchanged when there is no mutation-added new-file section (a real one the source
+    commit added itself is left alone), or no other non-test `.py` file to move its lines into.
+    """
+    for path, start, end in _files(diff):
+        section = diff[start:end]
+        if _SYNTHETIC_NEW_FILE not in section:
+            continue
+        hunk = _NEW_FILE_HUNK.search(section)
+        if not hunk:
+            continue
+        lines = [line[1:] for line in section[hunk.end() :].splitlines() if line.startswith("+")]
+        target = next(
+            (
+                p
+                for p, s2, e2 in _files(diff)
+                if p != path and p.endswith(".py") and not _is_test(p) and "new file mode" not in diff[s2:e2]
+            ),
+            None,
+        )
+        if target is None:
+            continue
+        without = diff[:start] + diff[end:]
+        appended = _append_hunk(without, target, lines)
+        if appended is None:
+            continue
+        return realistic_headers(appended)
+    return diff
+
+
 def add_scope_creep(diff, seed):
     """An unrelated function: inside an existing file on even seeds, as a new file on odd ones."""
     option = _free(_UNRELATED, seed, diff, lambda o: (o[0],))
@@ -432,8 +523,41 @@ def build(repos, existing, n_sources, first_index):
     return records
 
 
+VARIANTS = {"headers": realistic_headers, "inline": inline_new_files}
+
+
+def build_variant(records, transform):
+    """Apply `transform` to every bad-* record's diff; good-* records pass through unchanged.
+
+    Returns (records, changed, unchanged), counting bad-* records whose diff `transform` did
+    or didn't alter.
+    """
+    out, changed, unchanged = [], 0, 0
+    for record in records:
+        if not record["id"].startswith("bad-"):
+            out.append(record)
+            continue
+        new_diff = transform(record["diff"])
+        if new_diff != record["diff"]:
+            changed += 1
+        else:
+            unchanged += 1
+        out.append({**record, "diff": new_diff})
+    return out, changed, unchanged
+
+
 def main():
-    existing_path, n_sources, first_index, *repos = sys.argv[1:]
+    args = sys.argv[1:]
+    if args and args[0] == "--variant":
+        _, kind, path = args
+        with open(path, encoding="utf-8") as f:
+            records = [json.loads(line) for line in f if line.strip()]
+        out, changed, unchanged = build_variant(records, VARIANTS[kind])
+        for record in out:
+            print(json.dumps(record))
+        print(f"{kind}: changed {changed}, unchanged {unchanged}", file=sys.stderr)
+        return
+    existing_path, n_sources, first_index, *repos = args
     with open(existing_path, encoding="utf-8") as f:
         existing = [json.loads(line) for line in f if line.strip()]
     for record in build([parse_repo(r) for r in repos], existing, int(n_sources), int(first_index)):

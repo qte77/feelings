@@ -70,7 +70,9 @@
       <div class="layer-body">
         <p class="note">All setups on the same <span data-fill="fixtures">184</span> changes and the same four questions.
           Claude answered each change once, and Jev is scored on its first answer, so they compare fairly. Claude's times were
-          measured with 8 requests in flight at once.</p>
+          measured with 8 requests in flight at once (6 for the examples re-run after the fix described under "How we
+          tested it"). Claude was called through <code>claude -p</code> with no tools, our own system prompt and a JSON answer
+          schema: one plain model call per change, <strong>not</strong> Claude Code working as an agent.</p>
         <div class="scroll"><table class="compare" id="compare-table">
           <caption class="sr-only">Jev and three Claude models on the same changes</caption>
         </table></div>
@@ -178,6 +180,12 @@
           <dd>Per request as logged. End to end, including start-up, one check took p95 3.15 s without BAML and 2.94 s with it
             (10 runs each, 2026-09-23). Cost counts input tokens × $0.042 per million; output tokens are free (typesafe.ai, checked 2026-09-27).
             Claude's cost is what its CLI reports at list price.</dd>
+          <dt>How Claude was called</dt>
+          <dd><code>claude -p</code> (Claude Code CLI) with all tools off (<code>--tools ""</code>), our own system prompt
+            replacing the default, no thinking, user settings and plugins off, and a JSON schema for the four probabilities.
+            One turn per change. So the Claude numbers measure the model on this judging task, not Claude Code's agent
+            harness, whose tools and prompts can change agent scores a lot. Details:
+            <a href="https://github.com/qte77/feelings/issues/43">#43</a>.</dd>
           <dt>Firewall</dt>
           <dd>TypeSafe's firewall blocked 4 changes on 2026-09-23 and none since. Setups are always scored on the changes all of them answered.</dd>
           <dt>Why ROC-AUC</dt>

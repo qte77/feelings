@@ -4,6 +4,8 @@ import pytest
 
 from fixtures_build import (
     CONCERN_NAMES,
+    MUTATIONS,
+    VARIANTS,
     add_duplication,
     add_scope_creep,
     add_unused_abstraction,
@@ -16,6 +18,7 @@ from fixtures_build import (
     parses,
     realistic_headers,
     select,
+    settle,
     weaken_test,
 )
 
@@ -414,3 +417,33 @@ def test_build_variant_transforms_only_bad_records_and_counts_each_outcome():
     assert out[2]["diff"] == TEST_DIFF  # nothing to change
     assert changed == 1
     assert unchanged == 1
+
+
+# ---- P5: builds carry no fixture-building cue (plan 0002; P2 found the new-file cue) ----
+
+
+@pytest.mark.parametrize(
+    ("concern", "seed"),
+    [("single_use_abstraction", 0), ("scope_creep", 0), ("scope_creep", 1), ("duplication", 0)],
+)
+def test_mutations_place_code_in_an_existing_file_with_a_realistic_header(concern, seed):
+    out = MUTATIONS[concern](SRC_DIFF, seed)
+    assert "new file mode" not in out  # no new-file cue while the diff has a source file
+    assert "@@ -500,0 +501," not in out  # no fixed synthetic header
+    assert out.count("diff --git") == SRC_DIFF.count("diff --git")  # same files as the real diff
+    assert hunk_counts_match(out)
+    assert parses(SRC_DIFF, out)
+    assert leaks(added_by(SRC_DIFF, out)) == []
+
+
+def test_mutations_fall_back_to_a_new_file_only_without_a_source_file():
+    # TEST_DIFF has no non-test source file to move the addition into.
+    out = MUTATIONS["single_use_abstraction"](TEST_DIFF, 0)
+    assert "new file mode" in out
+    assert hunk_counts_match(out)
+
+
+def test_settle_variant_equals_what_the_builder_now_produces():
+    raw = add_unused_abstraction(SRC_DIFF, seed=0)
+    assert settle(raw) == MUTATIONS["single_use_abstraction"](SRC_DIFF, 0)
+    assert VARIANTS["settle"] is settle

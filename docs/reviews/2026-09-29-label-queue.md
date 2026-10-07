@@ -1,5 +1,9 @@
 # Label review queue (2026-09-29)
 
+> **Note (P5, 2026-09-29):** this queue was built on the v0.9.0 fixtures. P5 later rewrote how
+> the flaws are *placed* in 148 flawed diffs (no labels changed), so the review itself is still
+> valid. The diff excerpts and scores below show the earlier versions.
+
 **Purpose:** plan [0002](../plans/2026-09-29-0002-check-hardening.md) row P3 — "are the labels right?" This
 queue lists the fixtures where every setup that answered agrees with each other but disagrees with the
 label, on the first answer (sample 0) at the 0.70 setting: a **clean** record every setup flags (some

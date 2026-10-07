@@ -94,8 +94,29 @@ unchanged, and ids and labels stay the same.
 - Result: with `inline`, *unused abstraction* first-answer ROC-AUC falls from 0.894 to 0.860
   (184) and from 0.851 to 0.799 (yt-dlp). So the new-file shape is a cue, and plan 0002 row P5
   fixes the builder.
-- These files are **evaluation variants, not replacements**; the canonical sets stay
-  `fixtures.jsonl` and `fixtures-ytdlp.jsonl` until P5.
+- These files derive from the **v0.9.0** versions of the canonical sets, from before P5 settled
+  them. They are kept as #40's evidence and aren't canonical.
+**Settled in place (2026-09-29, plan 0002 row P5)**: both canonical files were rewritten with
+`--variant settle`, the transform every build now applies (`MUTATIONS` wraps each mutation in
+`settle()`). Ids, labels and all `good-*` records are unchanged, and every changed record still
+parses, leaks nothing and has consistent hunk counts.
+- 184 set: 77 `bad-*` diffs changed.
+- yt-dlp set: 71 changed; no mutation-added new file and no fixed `-500` header remain.
+- **16 records on the 184 keep a mutation-added new file**, because their diff has no other
+  non-test source file to hold the addition: `bad-02/06/14/23/33/52/53/55/58/61-single_use_abstraction`
+  and `bad-26/33/39/53/55/60-scope_creep`. Read their scores with that cue in mind.
+- Before P5 the sha256 values were `1d94ddac…` (184) and `990e2eaa…` (yt-dlp), tag `v0.9.0`;
+  after, `69859a31…` and `e6f384d1…`.
+- **Page data re-exported on the settled sets (2026-10-07), from mixed-date runs:**
+  - **Jev:** both runners rerun on all records (k=5). One BAML request erred, and two
+    records short of 5 samples were rerun and spliced in.
+  - **Claude:** k=1, rerun only on the **148 changed records**. The 107 (184 set) and 49
+    (yt-dlp) unchanged records keep their earlier answers: 2026-09-25 and 2026-09-29 runs,
+    with byte-identical input.
+  - **Checks on each merged file:** exactly one sample per id, and every changed id taken
+    from the new run.
+  - **Claude latency** for the changed records was measured with 6 requests in flight,
+    against 8 before.
 **Limits**: "good" labels are manual spot-review for the original 60 and filter-based for the extension, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

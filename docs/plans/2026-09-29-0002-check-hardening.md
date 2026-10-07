@@ -161,7 +161,7 @@ EXACTLY ONE table. Gate: `agent` / `owner` / `data`. Phases run in order; the ro
 | 12 | carried | Upstream PR to BoundaryML/feelings (0001 row 12). Waiting on their reply to #2 and #1 (none as of 2026-09-29). Branch `contrib/code-review-example` is the PR head. | owner / their reply | The PR opened or dropped per their answer; the branch deleted |
 | 16 | carried | Jev across the owner's other repos (0001 row 16) | owner, after a trial (18) | Per 0001 |
 | 17 | carried | Finish the `coding-harness-eval` rename references in 4 repos (0001 row 17) | owner | Per 0001 |
-| 9 | carried | Runners for Codex, Gemini CLI, opencode and HarnessRouter (0001 row 9) | agent; owner for logins | Per 0001 |
+| 9 | carried | Runners for Codex, Gemini CLI, opencode and HarnessRouter (0001 row 9). **Reframed by [#43](https://github.com/qte77/feelings/issues/43), 2026-10-07:** the Claude baseline was a single-turn, tool-less `claude -p` call with our own system prompt, not the Claude Code agent harness. So the multi-harness finding (harness moves agent scores) mostly doesn't apply to judging. Run each runner the same way (tools off, same system prompt, one turn) and record harness and version per row. HarnessRouter's API is now `POST /v1/responses` with `metadata.harness_id` (see qte77/coding-harness-eval#58) | agent; owner for logins | Per 0001, plus #43 |
 | 18 | carried | Go or no-go on a real trial (0001 row 18); on hold. The local check (row 24) is the first vehicle | owner | Per 0001 |
 | 19 | carried | Example browser on the page (0001 row 19). **It edits site/, so it can't run in parallel with Pub1** | agent | Per 0001 |
 | 20 | carried | Suspected deep-link bug in analyze-stock-kpi (0001 row 20) | agent; owner approves any issue | Per 0001 |

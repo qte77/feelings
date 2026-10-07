@@ -107,8 +107,16 @@ parses, leaks nothing and has consistent hunk counts.
   and `bad-26/33/39/53/55/60-scope_creep`. Read their scores with that cue in mind.
 - Before P5 the sha256 values were `1d94ddac…` (184) and `990e2eaa…` (yt-dlp), tag `v0.9.0`;
   after, `69859a31…` and `e6f384d1…`.
-- **`site/data/results.json` and `ytdlp.json` still describe the v0.9.0 versions** until the
-  Claude runs are redone on the 148 changed records (plan 0002, P5).
+- **Page data re-exported on the settled sets (2026-10-07), from mixed-date runs:**
+  - **Jev:** both runners rerun on all records (k=5). One BAML request erred, and two
+    records short of 5 samples were rerun and spliced in.
+  - **Claude:** k=1, rerun only on the **148 changed records**. The 107 (184 set) and 49
+    (yt-dlp) unchanged records keep their earlier answers: 2026-09-25 and 2026-09-29 runs,
+    with byte-identical input.
+  - **Checks on each merged file:** exactly one sample per id, and every changed id taken
+    from the new run.
+  - **Claude latency** for the changed records was measured with 6 requests in flight,
+    against 8 before.
 **Limits**: "good" labels are manual spot-review for the original 60 and filter-based for the extension, not a formal audit;
 mutations are synthetic, not real author commits. `scope_creep` and
 `single_use_abstraction` share one surface shape (a new appended file), so

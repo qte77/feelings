@@ -34,21 +34,19 @@
 - **P4 · intervals:** Jev catches 78% [71–86%] and wrongly flags 1.7% [0–5.1%]. *Unused abstraction* calibrates poorly: Brier 0.23 and PR-AUC 0.60, against over 0.94 for the others.
 - **P3 · label queue:** 8 records are queued for the owner.
 
-**P5 is in progress, handed off 2026-09-29.** It's on branch `feat/p5-no-new-file-cue`, as a **draft PR**.
-- **Done on the branch:**
-  - `settle()` in the builder, test-first; 135 tests pass.
-  - Both canonical fixture sets settled in place: 77 and 71 flawed diffs changed, 16 residual new-file records on the 184.
-  - Checks: no inserted hunk in a deleted file, and nothing broken or leaking.
-- **Jev rerun on the settled 184, without BAML:**
-  - *unused abstraction* 0.838 (0.827 without the residuals);
-  - scope creep 0.907, duplicated code 0.982, weakened tests 0.989;
-  - catches 76%, wrongly flags 2 of 59.
-- **Still to do, next session, in order:**
-  1. Check the rerun files in `/workspaces/qte77/feelings-runs/`: `p5-python-184.jsonl` should have 920 lines, `p5-baml-184.jsonl` 920, and `p5-python-ytdlp.jsonl` and `p5-baml-ytdlp.jsonl` 600 each. Rerun any that are missing or short with the loop under Commands (`p5-*`).
-  2. Score all four against the settled fixtures. Put the numbers in the P5 row and the draft PR, including the AUC without the 16 residuals.
-  3. **Owner decision:** rerun Claude on only the 148 changed records (about $10), then merge those answers with the unchanged records' existing answers. Check the merged files: exactly one sample per id, and every changed id taken from the new run. Note the mixed dates in `eval/fixtures.README.md`.
-  4. Then re-export `site/data/*.json`, update the page (rating "fair", the "Overstated" caveat resolved or restated) and release.
-- **Don't start phase 2** until step 3 is done, so that E1 and E2 are measured on the settled fixtures with matching Claude data.
+**P5 done (2026-10-07, #45).**
+- Both fixture sets are settled, so no new-file or fixed-header cue is left, apart from 16 residual records on the 184.
+- Jev was rerun on everything. Claude was rerun on the 148 changed records only and merged with checks; see `eval/fixtures.README.md`.
+- The page data is re-exported, and the page's "Overstated" caveat is replaced by "Examples fixed".
+- **Results** (first-answer ROC-AUC, *unused abstraction* before → after):
+  - Jev: 0.89 → 0.84 on the 184 (0.83 without the residuals); 0.85 → 0.78 on yt-dlp.
+  - Jev scope creep on yt-dlp: 0.82 → 0.77.
+  - Claude moved less: Opus by −0.01, Haiku by −0.03 and −0.07, Sonnet by −0.04 and +0.03.
+  - So Jev relied on the cue more than Claude did.
+- Jev without BAML now meets 13 of 14 bars on the 184: scope-creep repeat agreement is 0.946 against 0.95 (BAML: 0.967).
+- On yt-dlp, Jev's scope creep and unused abstraction (0.77, 0.78) are below 0001's 0.80 bar.
+
+**Next:** phase 2 (E1, E2, E4 as lanes; E3 and E5 gated). Not started: deferred by the owner on 2026-10-07.
 
 **Owner gates, all batched in "Remaining work":**
 - Claude spend: about $10 per full rerun of the 3 models on both sets.
@@ -152,7 +150,7 @@ EXACTLY ONE table. Gate: `agent` / `owner` / `data`. Phases run in order; the ro
 | P2 | 1 · C | **Is Jev reading cues from how the fixtures were built?** Two variants of the existing flawed records: (a) replace the fake `@@ -500,0 +501,N @@` headers with realistic ones, continuing after the section's last real hunk; (b) move the `new file mode` scope-creep and unused-abstraction additions into an existing source file. Rerun Jev on each variant (k=5) and compare with the baseline, clean records unchanged. The helpers are test-first. | agent | **Done (PR qte77/feelings#40):** `inline` drops single_use_abstraction AUC by 0.054 (184 set) / 0.053 (yt-dlp set) — bar exceeded on both, ~14× the P1 noise floor, a lower bound (16/50 cue-carrying records had no target file to move into). `headers` stays within noise on both sets. Builder follow-up recommended (route `add_unused_abstraction` through `_append_hunk`), not done in this PR |
 | P3 | 1 · D | **Are the labels right?** *Queue done in [#38](https://github.com/qte77/feelings/pull/38); owner review pending.* `eval/review_queue.py` lists the records where every setup (5 on the 184, 5 on yt-dlp) disagrees with the label at 0.70, plus yt-dlp #119, #120 and #126. It writes `docs/reviews/2026-09-29-label-queue.md` with the id, message, a short diff excerpt, each setup's score and a blank "owner verdict" column. | agent (queue), then **owner** (about 1 h review) | The queue is merged. After the owner's verdicts, relabels are applied in a separate PR with a reason each, and noted in `eval/fixtures.README.md` |
 | P4 | 1 · A | **How noisy are the numbers?** Test-first in `summarize`: a bootstrap 95% interval for per-question ROC-AUC and for the wrongly-flags rate (fixed seed, 1,000 resamples); PR-AUC; the Brier score. (This absorbs 0001 row 23.) **Done: PR [#37](https://github.com/qte77/feelings/pull/37).** | agent | Tests first; new fields in `export()` output; `results.json` and `ytdlp.json` re-exported by the main session |
-| P5 | 1 · C | ***In progress, on draft PR branch `feat/p5-no-new-file-cue`; see "Start here".*** Rerun loop, run from the repo root with `.env` and `~/.baml/env` sourced: `for s in 184:fixtures ytdlp:fixtures-ytdlp; do n=${s%%:*}; f=eval/${s#*:}.jsonl; uv run eval/jev_gate.py 5 < $f > /workspaces/qte77/feelings-runs/p5-python-$n.jsonl; BAML_AGENT_SKILL_CHECK=off baml run eval_gate < $f > /workspaces/qte77/feelings-runs/p5-baml-$n.jsonl; done`. **Remove the new-file cue (P2 found it).** The builder puts the scope-creep and unused-abstraction additions **into an existing non-test source file** of the same diff, as an appended hunk with a realistic header (P2's `inline_new_files` and `realistic_headers` logic). A new file is used only when the diff has no source file; record that per fixture. Then **rebuild only the flawed records of those two kinds** in place on both sets, keeping ids and clean records. Rerun both Jev runners (k=5) and re-export. Claude rerun on the rebuilt records is owner-gated (spend). Test-first. | agent (Jev); owner for Claude | The rebuilt fixtures are committed with a note in `eval/fixtures.README.md`; the page's numbers are replaced and its "Overstated" caveat is resolved or restated; phase 2 is unblocked |
+| P5 | 1 · C | ***Done in #45 (2026-10-07); see "Start here".*** Remove the new-file cue P2 found: `settle()` in every build; both sets settled in place; Jev and Claude (changed records only) rerun; page re-exported. | done | Done: fixtures committed with provenance; page numbers replaced; the caveat is now "Examples fixed" |
 | E1 | 2 | **A setting per repo, without tuning on reported numbers.** Split each set in half, stratified by label and source commit. Choose the lowest setting with wrongly flags ≤ 5% on one half; report the other half. | agent | Per-repo settings and held-out results against the pre-registered bar |
 | E2 | 2 | **Question variants:** alternative wordings of each question; one *score* question ("how risky, 0–4"); one *choice* question ("which flaw, if any"). The runner takes a questions file. | agent | Each variant scored on both sets with intervals; adopted only if it meets the bar on both |
 | E3 | 2 | **Real flaws, not only added ones:** collect about 20 real flawed commits (later reverted; fixes to skipped or weakened tests; review comments about duplication) from the owner's repos and yt-dlp's history, read-only. | **owner:** worth it? | A labelled `eval/fixtures-real.jsonl` with provenance, scored |

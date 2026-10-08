@@ -54,7 +54,19 @@
 - Whether collecting real flawed commits is worth it (E3).
 - The rows carried over from 0001 keep their original gates.
 
+**Where findings go** (one home each; link, don't copy):
+
+| Kind | Home |
+|---|---|
+| Public numbers | the page and `site/data/*.json`, with a release |
+| Method, decisions, bars, next steps | this plan |
+| How fixtures were built or changed | `eval/fixtures.README.md` |
+| How a baseline model was called | the page's "How Claude was called" and #43 |
+| Harness-benchmark rules | qte77/coding-harness-eval#59 |
+| Reusable lessons for other projects | qte77/ai-agents-research `docs/non-cc/infrastructure/jev-analysis.md` (update tracked in #622) |
+
 **Watch-outs:**
+- **No Docker in this Codespace.** Anything container-based (Harbor, etc.) runs in a manual GitHub Actions job or a cloud sandbox; see qte77/coding-harness-eval#57.
 - `gh` and `git push` must run as `env -u GH_TOKEN -u GITHUB_TOKEN …`; the env tokens are stale and give HTTP 401.
 - Always pass `-R qte77/feelings`, or `gh` targets upstream BoundaryML.
 - Commit signing can time out: retry, never disable it.
